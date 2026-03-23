@@ -1,0 +1,3039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GardenWise — Smart Yard Planting Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --soil: #3d2b1f;
+    --moss: #4a6741;
+    --sage: #7a9e76;
+    --leaf: #a8c89e;
+    --sky: #c8dfe8;
+    --sun: #e8c96b;
+    --cream: #f5f0e8;
+    --bark: #8b6347;
+    --paper: #faf7f2;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ── Tier / Monetization ── */
+  .tier-pill {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.25rem 0.75rem; border-radius: 999px;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .tier-pill:hover { opacity: 0.85; }
+  .tier-pill.free    { background: rgba(168,200,158,0.25); color: var(--leaf); border: 1px solid var(--sage); }
+  .tier-pill.plus    { background: #fef9ec; color: #92400e; border: 1px solid #f59e0b; }
+  .tier-pill.pro     { background: #ecfdf5; color: #065f46; border: 1px solid #10b981; }
+
+  /* Paywall modal */
+  .pw-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(20,12,6,0.75);
+    display: none; align-items: center; justify-content: center;
+    padding: 1.5rem;
+  }
+  .pw-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+  .pw-modal {
+    background: var(--paper); border-radius: 24px;
+    max-width: 680px; width: 100%;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+    overflow: hidden; max-height: 90vh; overflow-y: auto;
+  }
+  .pw-header {
+    background: linear-gradient(135deg, var(--moss) 0%, #1e3a14 100%);
+    padding: 2rem 2rem 1.5rem; text-align: center;
+  }
+  .pw-header h2 { font-family: 'Playfair Display', serif; color: var(--cream); font-size: 1.8rem; margin-bottom: 0.4rem; }
+  .pw-header h2 em { color: var(--sun); font-style: italic; }
+  .pw-header p { color: var(--leaf); font-size: 0.9rem; font-weight: 300; }
+  .pw-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: rgba(255,255,255,0.15); border: none; color: white;
+    border-radius: 50%; width: 32px; height: 32px;
+    font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .pw-body { padding: 1.5rem 2rem 2rem; }
+  .pw-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .pw-tier {
+    border: 2px solid var(--leaf); border-radius: 16px; padding: 1.25rem;
+    cursor: pointer; transition: all 0.15s; position: relative; background: white;
+  }
+  .pw-tier:hover { border-color: var(--moss); transform: translateY(-2px); }
+  .pw-tier.selected { border-color: var(--sun); background: #fdf9ec; }
+  .pw-tier .pw-tier-name { font-weight: 600; font-size: 1rem; color: var(--soil); margin-bottom: 0.2rem; }
+  .pw-tier .pw-tier-price { font-size: 1.6rem; font-weight: 700; color: var(--moss); }
+  .pw-tier .pw-tier-price span { font-size: 0.8rem; font-weight: 400; color: var(--bark); }
+  .pw-tier .pw-tier-note { font-size: 0.72rem; color: var(--bark); margin-bottom: 0.75rem; }
+  .pw-tier ul { list-style: none; font-size: 0.78rem; color: #444; }
+  .pw-tier ul li { padding: 0.2rem 0; display: flex; gap: 0.4rem; align-items: flex-start; }
+  .pw-tier ul li::before { content: '✓'; color: var(--moss); font-weight: 700; flex-shrink: 0; }
+  .pw-tier .rec-badge {
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    background: var(--sun); color: var(--soil); font-size: 0.65rem; font-weight: 700;
+    padding: 0.2rem 0.75rem; border-radius: 999px; white-space: nowrap; letter-spacing: 0.04em;
+  }
+  .pw-unlock-btn {
+    width: 100%; padding: 1rem; background: var(--moss); color: white;
+    border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 1rem; font-weight: 600; cursor: pointer; margin-bottom: 0.75rem;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .pw-unlock-btn:hover { background: var(--soil); transform: translateY(-1px); }
+  .pw-footer-note { font-size: 0.73rem; color: var(--bark); text-align: center; line-height: 1.5; }
+
+  /* Usage meter */
+  .usage-bar-wrap { margin: 0.75rem 0; }
+  .usage-bar-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--bark); margin-bottom: 0.3rem; }
+  .usage-bar { height: 6px; background: var(--cream); border-radius: 999px; overflow: hidden; }
+  .usage-bar-fill { height: 100%; background: var(--moss); border-radius: 999px; transition: width 0.4s; }
+  .usage-bar-fill.warn { background: #f59e0b; }
+  .usage-bar-fill.full { background: #ef4444; }
+
+  /* Pro feature cards */
+  .pro-feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .pro-card {
+    background: white; border-radius: 16px; padding: 1.25rem;
+    border: 1px solid rgba(61,43,31,0.08);
+    box-shadow: 0 2px 12px rgba(61,43,31,0.06);
+  }
+  .pro-card h4 { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--soil); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+  .pro-card p { font-size: 0.83rem; color: #555; line-height: 1.65; }
+  .pro-badge-inline {
+    font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem;
+    border-radius: 999px; background: #ecfdf5; color: #065f46;
+    border: 1px solid #10b981; letter-spacing: 0.04em;
+  }
+
+  /* Locked feature overlay */
+  .locked-feature { position: relative; }
+  .locked-feature .lock-veil {
+    position: absolute; inset: 0; z-index: 10;
+    background: rgba(245,240,232,0.88);
+    border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.5rem; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .locked-feature .lock-veil:hover { background: rgba(245,240,232,0.95); }
+  .lock-veil .lock-icon { font-size: 1.5rem; }
+  .lock-veil .lock-msg { font-size: 0.82rem; font-weight: 600; color: var(--soil); }
+  .lock-veil .lock-sub { font-size: 0.72rem; color: var(--bark); }
+
+  /* Soil amendment table */
+  .soil-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin-top: 0.75rem; }
+  .soil-table th { background: var(--cream); padding: 0.5rem 0.75rem; text-align: left; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--bark); }
+  .soil-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid rgba(61,43,31,0.06); vertical-align: top; }
+  .soil-table tr:last-child td { border-bottom: none; }
+
+  /* Seasonal task checklist */
+  .task-list { list-style: none; }
+  .task-item { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.65rem 0; border-bottom: 1px solid rgba(61,43,31,0.06); }
+  .task-item:last-child { border-bottom: none; }
+  .task-cb { width: 18px; height: 18px; border: 2px solid var(--sage); border-radius: 4px; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; margin-top: 1px; }
+  .task-cb.done { background: var(--moss); border-color: var(--moss); color: white; font-size: 0.7rem; }
+  .task-text { font-size: 0.85rem; line-height: 1.5; color: var(--soil); }
+  .task-text .task-season { font-size: 0.7rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 999px; margin-right: 0.3rem; }
+  .task-text .task-season.spring { background: #d1fae5; color: #065f46; }
+  .task-text .task-season.summer { background: #fef9c3; color: #713f12; }
+  .task-text .task-season.fall   { background: #ffedd5; color: #7c2d12; }
+  .task-text .task-season.winter { background: #dbeafe; color: #1e3a8a; }
+
+  /* Chemical calendar */
+  .chem-month-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.5rem; margin-top: 0.75rem; }
+  @media(max-width:500px){ .chem-month-grid { grid-template-columns: repeat(2,1fr); } }
+  .chem-month { background: var(--cream); border-radius: 10px; padding: 0.6rem 0.75rem; }
+  .chem-month .cm-name { font-size: 0.72rem; font-weight: 700; color: var(--bark); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+  .chem-month .cm-tasks { font-size: 0.72rem; color: var(--soil); line-height: 1.5; }
+  .chem-month.active-month { border: 2px solid var(--moss); }
+
+  /* Native plant library */
+  .native-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 0.75rem; margin-top: 0.75rem; }
+  .native-card { background: var(--cream); border-radius: 12px; padding: 0.9rem; }
+  .native-card .nc-name { font-weight: 600; font-size: 0.88rem; color: var(--soil); margin-bottom: 0.15rem; }
+  .native-card .nc-sci { font-style: italic; font-size: 0.72rem; color: var(--bark); margin-bottom: 0.4rem; }
+  .native-card .nc-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .nc-tag { font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: white; border: 1px solid var(--leaf); color: var(--moss); }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--soil);
+    min-height: 100vh;
+  }
+
+  /* Header */
+  header {
+    background: var(--soil);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(61,43,31,0.3);
+  }
+  header .logo-icon { font-size: 2rem; }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    color: var(--leaf);
+    font-size: 1.6rem;
+    letter-spacing: -0.02em;
+  }
+  header p {
+    color: var(--bark);
+    font-size: 0.8rem;
+    font-weight: 300;
+    margin-top: 0.1rem;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, var(--moss) 0%, var(--soil) 60%);
+    padding: 4rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 80%, rgba(168,200,158,0.15) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 20%, rgba(232,201,107,0.1) 0%, transparent 50%);
+  }
+  .hero h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    color: var(--cream);
+    line-height: 1.2;
+    position: relative;
+    margin-bottom: 1rem;
+  }
+  .hero h2 em { color: var(--sun); font-style: italic; }
+  .hero p {
+    color: var(--leaf);
+    font-size: 1.1rem;
+    font-weight: 300;
+    max-width: 500px;
+    margin: 0 auto 2.5rem;
+    position: relative;
+  }
+
+  /* ZIP Form */
+  .zip-form {
+    display: flex;
+    gap: 0.75rem;
+    max-width: 420px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .zip-form input {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--sage);
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-family: 'DM Sans', sans-serif;
+    background: rgba(245,240,232,0.95);
+    color: var(--soil);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .zip-form input::placeholder { color: var(--bark); opacity: 0.7; }
+  .zip-form input:focus { border-color: var(--sun); }
+  .zip-form button {
+    padding: 1rem 1.5rem;
+    background: var(--sun);
+    color: var(--soil);
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.2s;
+    white-space: nowrap;
+  }
+  .zip-form button:hover { background: #f0d870; transform: translateY(-1px); }
+  .zip-form button:active { transform: translateY(0); }
+
+  /* Main content */
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+  }
+
+  /* Section cards */
+  .section-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 20px rgba(61,43,31,0.07);
+    border: 1px solid rgba(61,43,31,0.06);
+    display: none;
+    animation: slideUp 0.4s ease;
+  }
+  .section-card.visible { display: block; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: var(--soil);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  /* Climate summary */
+  .climate-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .climate-stat {
+    background: var(--cream);
+    border-radius: 14px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .climate-stat .icon { font-size: 1.6rem; margin-bottom: 0.3rem; }
+  .climate-stat .label { font-size: 0.72rem; color: var(--bark); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .climate-stat .value { font-size: 1.1rem; font-weight: 500; color: var(--soil); margin-top: 0.2rem; }
+
+  /* Planting calendar */
+  .season-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  @media(min-width: 600px) { .season-grid { grid-template-columns: repeat(4, 1fr); } }
+
+  .season-card {
+    border-radius: 14px;
+    padding: 1.25rem 1rem;
+    text-align: center;
+  }
+  .season-card.spring { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
+  .season-card.summer { background: linear-gradient(135deg, #fff9e6, #ffeaa0); }
+  .season-card.fall   { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
+  .season-card.winter { background: linear-gradient(135deg, #e3f2fd, #bbdefb); }
+
+  .season-card .season-icon { font-size: 2rem; }
+  .season-card h4 { font-size: 0.9rem; font-weight: 600; margin: 0.4rem 0; color: var(--soil); }
+  .season-card ul { list-style: none; text-align: left; }
+  .season-card ul li { font-size: 0.82rem; color: #444; padding: 0.2rem 0; display: flex; align-items: flex-start; gap: 0.35rem; }
+  .season-card ul li::before { content: '·'; color: var(--moss); font-weight: 700; flex-shrink: 0; }
+
+  /* Tags */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .tag {
+    padding: 0.4rem 1rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+  .tag.green { background: var(--leaf); color: var(--soil); }
+  .tag.yellow { background: #fdeea0; color: #5a4400; }
+  .tag.blue { background: var(--sky); color: #1a3a4a; }
+
+  /* Wildlife selector */
+  .wildlife-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .wildlife-btn {
+    padding: 0.6rem 1.2rem;
+    border: 2px solid var(--leaf);
+    border-radius: 999px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--soil);
+  }
+  .wildlife-btn:hover, .wildlife-btn.active {
+    background: var(--moss);
+    border-color: var(--moss);
+    color: white;
+  }
+
+  /* AI Chat */
+  .chat-area {
+    background: var(--cream);
+    border-radius: 14px;
+    padding: 1.25rem;
+    min-height: 120px;
+    margin-bottom: 1rem;
+    font-size: 0.92rem;
+    line-height: 1.7;
+    color: var(--soil);
+    white-space: pre-wrap;
+  }
+  .chat-area .placeholder { color: var(--bark); font-style: italic; }
+
+  .chat-input-row { display: flex; gap: 0.75rem; }
+  .chat-input-row input {
+    flex: 1;
+    padding: 0.8rem 1rem;
+    border: 2px solid var(--leaf);
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    background: white;
+    color: var(--soil);
+  }
+  .chat-input-row input:focus { border-color: var(--moss); }
+  .chat-input-row button {
+    padding: 0.8rem 1.4rem;
+    background: var(--moss);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .chat-input-row button:hover { background: var(--soil); }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid var(--leaf);
+    border-top-color: var(--moss);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--bark);
+  }
+  .empty-state .big-icon { font-size: 4rem; margin-bottom: 1rem; }
+  .empty-state p { font-size: 1rem; font-weight: 300; }
+
+  /* Divider label */
+  .divider-label {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bark);
+    margin: 0.75rem 0;
+    opacity: 0.6;
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.78rem;
+    color: var(--bark);
+    opacity: 0.7;
+  }
+
+  /* ── Build Your Yard ── */
+  .yard-builder-hero {
+    background: linear-gradient(160deg, #1a2e14 0%, #2d4a22 50%, var(--soil) 100%);
+    padding: 3.5rem 2rem 2.5rem;
+    text-align: center;
+  }
+  .yard-builder-hero h2 {
+    font-family: 'Playfair Display', serif;
+    color: var(--cream);
+    font-size: clamp(1.8rem, 4.5vw, 3rem);
+    margin-bottom: 0.6rem;
+  }
+  .yard-builder-hero h2 em { color: var(--sun); font-style: italic; }
+  .yard-builder-hero p { color: var(--leaf); font-size: 0.95rem; font-weight: 300; max-width: 480px; margin: 0 auto 2rem; }
+
+  .yard-steps {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .yard-step-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(168,200,158,0.3);
+    transition: background 0.3s;
+  }
+  .yard-step-dot.active { background: var(--sun); }
+  .yard-step-dot.done   { background: var(--leaf); }
+
+  .yard-builder-body {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  /* Section selector */
+  .yard-section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .yard-section-tile {
+    border: 2px solid var(--leaf);
+    border-radius: 16px;
+    padding: 1.25rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    background: white;
+    transition: all 0.18s;
+    position: relative;
+  }
+  .yard-section-tile:hover { border-color: var(--moss); background: #f5faf3; }
+  .yard-section-tile.active { border-color: var(--moss); background: var(--moss); color: white; }
+  .yard-section-tile .tile-icon { font-size: 2rem; margin-bottom: 0.4rem; }
+  .yard-section-tile .tile-label { font-size: 0.85rem; font-weight: 500; }
+  .yard-section-tile .tile-status {
+    font-size: 0.72rem;
+    margin-top: 0.25rem;
+    color: var(--bark);
+    font-weight: 300;
+  }
+  .yard-section-tile.active .tile-status { color: var(--leaf); }
+  .yard-section-tile .tile-check {
+    position: absolute;
+    top: 0.5rem; right: 0.6rem;
+    font-size: 0.75rem;
+    display: none;
+  }
+  .yard-section-tile.configured .tile-check { display: block; }
+
+  /* Sun estimator */
+  .sun-estimator {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 20px rgba(61,43,31,0.07);
+    border: 1px solid rgba(61,43,31,0.06);
+    display: none;
+  }
+  .sun-estimator.visible { display: block; animation: slideUp 0.35s ease; }
+  .sun-estimator h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--soil);
+    margin-bottom: 0.4rem;
+  }
+  .sun-estimator .section-subtitle {
+    font-size: 0.85rem;
+    color: var(--bark);
+    margin-bottom: 1.5rem;
+  }
+
+  /* Sun arc diagram */
+  .sun-arc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  @media(max-width: 500px) { .sun-arc-grid { grid-template-columns: 1fr; } }
+
+  .arc-card {
+    border: 2px solid var(--leaf);
+    border-radius: 14px;
+    padding: 0.75rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: white;
+  }
+  .arc-card:hover { border-color: var(--moss); }
+  .arc-card.selected { border-color: var(--sun); background: #fdf9ec; }
+  .arc-card svg { width: 100%; max-width: 120px; height: auto; margin: 0 auto; display: block; }
+  .arc-card .arc-label { font-size: 0.78rem; font-weight: 600; color: var(--soil); margin-top: 0.4rem; }
+  .arc-card .arc-sub { font-size: 0.7rem; color: var(--bark); margin-top: 0.15rem; }
+
+  /* Sun result band */
+  .sun-result-row {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+    align-items: center;
+  }
+  .sun-badge {
+    padding: 0.4rem 1rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+  .sun-badge.full-sun    { background: #fef3c7; color: #92400e; }
+  .sun-badge.part-sun    { background: #fde68a; color: #78350f; }
+  .sun-badge.part-shade  { background: #d1fae5; color: #065f46; }
+  .sun-badge.full-shade  { background: #dbeafe; color: #1e40af; }
+  .sun-badge.variable    { background: #ede9fe; color: #5b21b6; }
+
+  .section-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+  }
+  .section-summary-card {
+    background: var(--cream);
+    border-radius: 14px;
+    padding: 1rem;
+  }
+  .section-summary-card .ss-name { font-weight: 600; font-size: 0.9rem; color: var(--soil); display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+  .section-summary-card .ss-sun { font-size: 0.8rem; color: var(--bark); }
+
+  .build-next-btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--sun);
+    color: var(--soil);
+    border: none;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 0.5rem;
+  }
+  .build-next-btn:hover { background: #f0d870; transform: translateY(-1px); }
+  .build-next-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .yard-profile-banner {
+    background: linear-gradient(135deg, var(--moss), #2d4a22);
+    border-radius: 16px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+  .yard-profile-banner.visible { display: block; animation: slideUp 0.4s ease; }
+  .yard-profile-banner h4 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--sun); margin-bottom: 1rem; }
+
+  /* ── Species Identifier ── */
+  .identifier-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 20px rgba(61,43,31,0.07);
+    border: 1px solid rgba(61,43,31,0.06);
+    animation: slideUp 0.4s ease;
+  }
+
+  .upload-zone {
+    border: 2px dashed var(--sage);
+    border-radius: 16px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--cream);
+    position: relative;
+  }
+  .upload-zone:hover { border-color: var(--moss); background: #f0f5ee; }
+  .upload-zone.drag-over { border-color: var(--sun); background: #fdf9ec; }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-zone .upload-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+  .upload-zone p { color: var(--bark); font-size: 0.92rem; }
+  .upload-zone p strong { color: var(--moss); }
+
+  .upload-type-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+    justify-content: center;
+  }
+  .type-badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background: var(--cream);
+    color: var(--bark);
+    border: 1px solid rgba(61,43,31,0.1);
+  }
+
+  .preview-wrap {
+    position: relative;
+    margin: 1rem 0;
+    border-radius: 14px;
+    overflow: hidden;
+    max-height: 320px;
+    display: none;
+  }
+  .preview-wrap img {
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+    border-radius: 14px;
+  }
+  .preview-wrap .change-btn {
+    position: absolute;
+    top: 0.75rem; right: 0.75rem;
+    background: rgba(61,43,31,0.75);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .identify-btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--moss);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 0.75rem;
+    display: none;
+  }
+  .identify-btn:hover { background: var(--soil); }
+  .identify-btn:active { transform: scale(0.99); }
+
+  .id-result {
+    margin-top: 1.5rem;
+    display: none;
+  }
+
+  .id-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .id-badge {
+    font-size: 2.5rem;
+    flex-shrink: 0;
+  }
+  .id-names h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--soil);
+  }
+  .id-names .sci-name {
+    font-style: italic;
+    font-size: 0.88rem;
+    color: var(--bark);
+    margin-top: 0.15rem;
+  }
+
+  .invasive-banner {
+    background: linear-gradient(135deg, #fff3cd, #ffe8a0);
+    border: 2px solid #d4a017;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .invasive-banner.confirmed {
+    background: linear-gradient(135deg, #fde8e8, #fcc);
+    border-color: #c0392b;
+  }
+  .invasive-banner.native {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    border-color: #2e7d32;
+  }
+  .invasive-banner .banner-icon { font-size: 1.5rem; flex-shrink: 0; }
+  .invasive-banner .banner-text strong { display: block; margin-bottom: 0.2rem; font-size: 0.95rem; }
+  .invasive-banner .banner-text p { font-size: 0.85rem; color: #555; line-height: 1.5; }
+
+  .id-section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--bark);
+    margin: 1.25rem 0 0.6rem;
+  }
+  .id-body {
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: #333;
+    white-space: pre-wrap;
+  }
+
+  .removal-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+  .removal-card {
+    border-radius: 12px;
+    padding: 1rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+  .removal-card.mechanical { background: #e8f5e9; border-left: 3px solid #388e3c; }
+  .removal-card.chemical   { background: #fff3e0; border-left: 3px solid #f57c00; }
+  .removal-card.biological { background: #e3f2fd; border-left: 3px solid #1976d2; }
+  .removal-card h5 { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+  .removal-card.mechanical h5 { color: #2e7d32; }
+  .removal-card.chemical h5   { color: #e65100; }
+  .removal-card.biological h5 { color: #1565c0; }
+
+  .disclaimer-note {
+    background: var(--cream);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.78rem;
+    color: var(--bark);
+    margin-top: 1rem;
+    line-height: 1.5;
+  }
+
+  .new-scan-btn {
+    margin-top: 1rem;
+    padding: 0.7rem 1.4rem;
+    background: transparent;
+    border: 2px solid var(--moss);
+    border-radius: 10px;
+    color: var(--moss);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  /* ── Weather & Rainfall ── */
+  .weather-connect-bar {
+    background: linear-gradient(135deg, #1a3a5c 0%, #0f2744 100%);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    display: none;
+  }
+  .weather-connect-bar.visible { display: flex; }
+  .weather-connect-bar .wcb-left { display:flex; align-items:center; gap:0.75rem; }
+  .weather-connect-bar .wcb-icon { font-size:1.5rem; }
+  .weather-connect-bar .wcb-text strong { color:#93c5fd; font-size:0.95rem; display:block; }
+  .weather-connect-bar .wcb-text span { color:#93c5fd; opacity:0.7; font-size:0.8rem; }
+  .wcb-btn {
+    padding:0.65rem 1.4rem;
+    background:#3b82f6;
+    color:white;
+    border:none;
+    border-radius:10px;
+    font-family:'DM Sans',sans-serif;
+    font-size:0.88rem;
+    font-weight:500;
+    cursor:pointer;
+    transition:background 0.15s;
+    white-space:nowrap;
+  }
+  .wcb-btn:hover { background:#2563eb; }
+  .wcb-btn.connected { background:#16a34a; cursor:default; }
+
+  /* Weather card */
+  .weather-card {
+    background:white;
+    border-radius:20px;
+    padding:2rem;
+    margin-bottom:1.5rem;
+    box-shadow:0 2px 20px rgba(61,43,31,0.07);
+    border:1px solid rgba(61,43,31,0.06);
+    display:none;
+    animation:slideUp 0.4s ease;
+  }
+  .weather-card.visible { display:block; }
+  .weather-card h3 {
+    font-family:'Playfair Display',serif;
+    font-size:1.4rem;
+    color:var(--soil);
+    margin-bottom:1.25rem;
+    display:flex;
+    align-items:center;
+    gap:0.6rem;
+  }
+
+  /* Rain gauge diagram */
+  .rain-gauge-wrap {
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:1.5rem;
+    align-items:start;
+    margin-bottom:1.5rem;
+  }
+  @media(max-width:540px){ .rain-gauge-wrap { grid-template-columns:1fr; } }
+
+  .rain-gauge-svg { width:130px; flex-shrink:0; }
+
+  .rain-tabs {
+    display:flex;
+    gap:0.4rem;
+    margin-bottom:1rem;
+    flex-wrap:wrap;
+  }
+  .rain-tab {
+    padding:0.35rem 1rem;
+    border:2px solid var(--leaf);
+    border-radius:999px;
+    font-size:0.8rem;
+    font-weight:500;
+    cursor:pointer;
+    background:white;
+    color:var(--soil);
+    transition:all 0.15s;
+  }
+  .rain-tab.active { background:var(--moss); border-color:var(--moss); color:white; }
+
+  .rain-bars {
+    display:flex;
+    align-items:flex-end;
+    gap:4px;
+    height:100px;
+    border-bottom:2px solid var(--leaf);
+    border-left:2px solid var(--leaf);
+    padding:0 4px 0 4px;
+    margin-bottom:0.5rem;
+    position:relative;
+  }
+  .rain-bar-col { display:flex; flex-direction:column; align-items:center; flex:1; height:100%; justify-content:flex-end; }
+  .rain-bar {
+    width:100%;
+    background:linear-gradient(180deg, #60a5fa, #3b82f6);
+    border-radius:3px 3px 0 0;
+    min-height:2px;
+    transition:height 0.5s ease;
+    position:relative;
+  }
+  .rain-bar.future { background:linear-gradient(180deg,#93c5fd,#60a5fa); opacity:0.65; }
+  .rain-bar.today { background:linear-gradient(180deg,#34d399,#10b981); }
+  .rain-bar-label { font-size:0.6rem; color:var(--bark); margin-top:3px; text-align:center; }
+  .rain-avg-line {
+    position:absolute;
+    left:0; right:0;
+    border-top:2px dashed var(--bark);
+    opacity:0.4;
+  }
+
+  /* Watering recommendation */
+  .water-rec {
+    border-radius:14px;
+    padding:1.1rem 1.25rem;
+    margin-bottom:1rem;
+    display:flex;
+    gap:0.9rem;
+    align-items:flex-start;
+  }
+  .water-rec.no-water { background:linear-gradient(135deg,#d1fae5,#a7f3d0); border:2px solid #10b981; }
+  .water-rec.water-soon { background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px solid #f59e0b; }
+  .water-rec.water-now  { background:linear-gradient(135deg,#fee2e2,#fca5a5); border:2px solid #ef4444; }
+  .water-rec.drought    { background:linear-gradient(135deg,#fdf2f8,#f5d0fe); border:2px solid #a21caf; }
+  .water-rec-icon { font-size:1.8rem; flex-shrink:0; line-height:1; }
+  .water-rec-body strong { font-size:0.95rem; display:block; margin-bottom:0.2rem; color:var(--soil); }
+  .water-rec-body p { font-size:0.83rem; line-height:1.6; color:#444; }
+
+  /* NWS alerts */
+  .nws-alerts { margin-bottom:1rem; }
+  .nws-alert {
+    border-radius:12px;
+    padding:0.9rem 1.1rem;
+    margin-bottom:0.6rem;
+    display:flex;
+    gap:0.75rem;
+    align-items:flex-start;
+    font-size:0.85rem;
+    line-height:1.5;
+  }
+  .nws-alert.warning  { background:#fef3c7; border-left:4px solid #f59e0b; }
+  .nws-alert.watch    { background:#fee2e2; border-left:4px solid #ef4444; }
+  .nws-alert.drought  { background:#f5d0fe; border-left:4px solid #a21caf; }
+  .nws-alert.advisory { background:#dbeafe; border-left:4px solid #3b82f6; }
+  .nws-alert.info     { background:var(--cream); border-left:4px solid var(--sage); }
+  .nws-alert-icon { font-size:1.2rem; flex-shrink:0; }
+  .nws-alert strong { display:block; margin-bottom:0.2rem; color:var(--soil); }
+
+  /* Forecast row */
+  .forecast-row {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(70px,1fr));
+    gap:0.5rem;
+    margin-top:1rem;
+  }
+  .forecast-day {
+    background:var(--cream);
+    border-radius:10px;
+    padding:0.6rem 0.4rem;
+    text-align:center;
+    font-size:0.75rem;
+  }
+  .forecast-day .fd-day  { font-weight:600; color:var(--soil); margin-bottom:0.2rem; }
+  .forecast-day .fd-icon { font-size:1.3rem; margin:0.2rem 0; }
+  .forecast-day .fd-rain { color:#3b82f6; font-size:0.7rem; }
+  .forecast-day .fd-temp { color:var(--bark); font-size:0.7rem; }
+
+  .weather-loading { text-align:center; padding:2rem; color:var(--bark); font-size:0.9rem; }
+  .nws-source-link { font-size:0.72rem; color:var(--bark); opacity:0.7; margin-top:0.75rem; }
+  .nws-source-link a { color:var(--moss); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">🌿</div>
+  <div style="flex:1;">
+    <h1>GardenWise</h1>
+    <p>Smart Yard Planting Guide</p>
+  </div>
+  <div id="tierBadge" class="tier-pill free" onclick="openPaywall()" title="Tap to upgrade">🌱 Free</div>
+</header>
+
+<!-- ── Paywall Modal ─────────────────────────────────────────────────────── -->
+<div class="pw-overlay" id="pwOverlay" onclick="closePwIfBackground(event)">
+  <div class="pw-modal" style="position:relative;">
+    <div class="pw-header" style="position:relative;">
+      <button class="pw-close" onclick="closePaywall()">✕</button>
+      <h2>Unlock <em>GardenWise</em></h2>
+      <p>One-time purchase · No subscription · No recurring fees · Ever.</p>
+    </div>
+    <div class="pw-body">
+      <div class="pw-tiers">
+        <!-- Free -->
+        <div class="pw-tier" id="pw-free" onclick="selectTier('free')">
+          <div class="pw-tier-name">Core</div>
+          <div class="pw-tier-price">$0</div>
+          <div class="pw-tier-note">Always free, no account</div>
+          <ul>
+            <li>Climate &amp; planting calendar</li>
+            <li>Grass recommendations</li>
+            <li>Wildlife planting</li>
+            <li>AI Advisor (5 questions/day)</li>
+            <li>Species ID (3/month)</li>
+            <li>Basic yard sections</li>
+          </ul>
+        </div>
+        <!-- Plus -->
+        <div class="pw-tier selected" id="pw-plus" onclick="selectTier('plus')" style="position:relative;">
+          <div class="rec-badge">⭐ Most Popular</div>
+          <div class="pw-tier-name">GardenWise+</div>
+          <div class="pw-tier-price">$4.99 <span>one-time</span></div>
+          <div class="pw-tier-note">Best value · Unlocks everything you need</div>
+          <ul>
+            <li>Everything in Core</li>
+            <li>Unlimited AI Advisor</li>
+            <li>Unlimited Species ID</li>
+            <li>NWS Live Weather &amp; Alerts</li>
+            <li>Drought / Watering Alerts</li>
+            <li>Full Yard Sun/Shade Profiler</li>
+            <li>Invasive Species + Removal</li>
+            <li>7-Day Planting Window Tips</li>
+          </ul>
+        </div>
+        <!-- Pro -->
+        <div class="pw-tier" id="pw-pro" onclick="selectTier('pro')">
+          <div class="pw-tier-name">GardenWise Pro</div>
+          <div class="pw-tier-price">$9.99 <span>one-time</span></div>
+          <div class="pw-tier-note">For serious outdoor enthusiasts</div>
+          <ul>
+            <li>Everything in Plus</li>
+            <li>Soil Amendment Guides</li>
+            <li>Seasonal Task Checklist</li>
+            <li>Chemical Application Calendar</li>
+            <li>Regional Native Plant Library</li>
+            <li>Export Yard Profile (PDF)</li>
+            <li>Lifetime Feature Updates</li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="pwUsageMeter" style="margin-bottom:1rem; display:none;">
+        <div class="usage-bar-wrap">
+          <div class="usage-bar-label"><span>AI questions today</span><span id="aiUsageLabel">0 / 5</span></div>
+          <div class="usage-bar"><div class="usage-bar-fill" id="aiUsageFill" style="width:0%"></div></div>
+        </div>
+        <div class="usage-bar-wrap">
+          <div class="usage-bar-label"><span>Species IDs this month</span><span id="idUsageLabel">0 / 3</span></div>
+          <div class="usage-bar"><div class="usage-bar-fill" id="idUsageFill" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <button class="pw-unlock-btn" id="pwUnlockBtn" onclick="purchaseTier()">🔓 Unlock GardenWise+ — $4.99</button>
+      <div class="pw-footer-note">
+        Payments processed securely through the App Store or Google Play.<br>
+        One-time purchase · No auto-renewal · No hidden fees · Supports independent development.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hero">
+  <h2>Grow <em>smarter</em>,<br>not harder.</h2>
+  <p>Enter your ZIP code and get personalized planting advice based on your local climate, soil, and sunlight.</p>
+  <div class="zip-form">
+    <input type="text" id="zipInput" placeholder="Enter ZIP code (e.g. 22554)" maxlength="5" inputmode="numeric">
+    <button onclick="loadLocation()">🌱 Analyze</button>
+  </div>
+</div>
+
+<!-- ── NWS Weather Connect Bar ── -->
+<div class="weather-connect-bar" id="weatherConnectBar">
+  <div class="wcb-left">
+    <div class="wcb-icon">🌦️</div>
+    <div class="wcb-text">
+      <strong>National Weather Service — Live Data</strong>
+      <span>Connect for real-time precipitation, alerts &amp; drought warnings for your ZIP</span>
+    </div>
+  </div>
+  <button class="wcb-btn" id="nwsConnectBtn" onclick="connectNWS()">Connect to NWS →</button>
+</div>
+
+<!-- ── Build Your Yard ─────────────────────────────────────────────────────── -->
+<div class="yard-builder-hero" id="yardBuilderHero" style="display:none;">
+  <h2>Let's build your <em>yard</em></h2>
+  <p>Tell us about each part of your outdoor space — sun exposure, shade patterns, and more — so every recommendation fits <em>your</em> specific conditions.</p>
+  <div class="yard-steps" id="yardStepDots"></div>
+</div>
+
+<div class="yard-builder-body" id="yardBuilderBody" style="display:none;">
+
+  <!-- Step 1: Choose sections -->
+  <div id="ybStep1">
+    <div style="margin-bottom:1rem;">
+      <h3 style="font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--soil); margin-bottom:0.3rem;">Which parts of your yard do you have?</h3>
+      <p style="font-size:0.85rem; color:var(--bark);">Select all that apply. You'll customize each one.</p>
+    </div>
+    <div class="yard-section-grid">
+      <div class="yard-section-tile" id="tile-front" onclick="toggleYardSection('front')">
+        <div class="tile-check">✅</div>
+        <div class="tile-icon">🏠</div>
+        <div class="tile-label">Front Yard</div>
+        <div class="tile-status">Not configured</div>
+      </div>
+      <div class="yard-section-tile" id="tile-back" onclick="toggleYardSection('back')">
+        <div class="tile-check">✅</div>
+        <div class="tile-icon">🌿</div>
+        <div class="tile-label">Back Yard</div>
+        <div class="tile-status">Not configured</div>
+      </div>
+      <div class="yard-section-tile" id="tile-left" onclick="toggleYardSection('left')">
+        <div class="tile-check">✅</div>
+        <div class="tile-icon">◀️</div>
+        <div class="tile-label">Left Side</div>
+        <div class="tile-status">Not configured</div>
+      </div>
+      <div class="yard-section-tile" id="tile-right" onclick="toggleYardSection('right')">
+        <div class="tile-check">✅</div>
+        <div class="tile-icon">▶️</div>
+        <div class="tile-label">Right Side</div>
+        <div class="tile-status">Not configured</div>
+      </div>
+      <div class="yard-section-tile" id="tile-garden" onclick="toggleYardSection('garden')">
+        <div class="tile-check">✅</div>
+        <div class="tile-icon">🌻</div>
+        <div class="tile-label">Garden Bed</div>
+        <div class="tile-status">Not configured</div>
+      </div>
+    </div>
+    <button class="build-next-btn" id="ybStep1Btn" onclick="goToStep2()" disabled>Continue: Set Sun Conditions →</button>
+  </div>
+
+  <!-- Step 2: Sun estimator per section -->
+  <div id="ybStep2" style="display:none;">
+    <div style="margin-bottom:1rem;">
+      <h3 style="font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--soil); margin-bottom:0.3rem;" id="ybSectionTitle">Front Yard — Sun &amp; Shade</h3>
+      <p style="font-size:0.85rem; color:var(--bark);">Observe each time of day and pick the closest match for this section of your yard.</p>
+    </div>
+
+    <div style="background:var(--cream); border-radius:14px; padding:1.25rem; margin-bottom:1.5rem;">
+      <div style="font-size:0.8rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--bark); margin-bottom:0.75rem;">How to estimate your sun exposure:</div>
+      <div style="font-size:0.85rem; color:var(--soil); line-height:1.7;">
+        Go outside at <strong>3 different times</strong> on a clear day and observe each part of your yard:<br>
+        🌅 <strong>Early morning</strong> (7–9 AM) &nbsp;·&nbsp; ☀️ <strong>Midday</strong> (11 AM–1 PM) &nbsp;·&nbsp; 🌇 <strong>Late afternoon</strong> (4–6 PM)<br>
+        Note whether each area is in <em>full sun</em>, <em>dappled/partial shade</em>, or <em>full shade</em>.
+      </div>
+    </div>
+
+    <!-- Three time-of-day selectors with SVG diagrams -->
+    <div class="sun-arc-grid" id="morningGrid">
+      <div style="grid-column:1/-1; font-size:0.8rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--bark); padding-bottom:0.25rem; border-bottom:1px solid var(--leaf);">🌅 Early Morning (7–9 AM)</div>
+    </div>
+    <div class="sun-arc-grid" id="morningOptions" style="margin-top:0.5rem; margin-bottom:1.25rem;">
+      <!-- filled by JS -->
+    </div>
+
+    <div class="sun-arc-grid" id="middayGrid">
+      <div style="grid-column:1/-1; font-size:0.8rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--bark); padding-bottom:0.25rem; border-bottom:1px solid var(--leaf);">☀️ Midday (11 AM–1 PM)</div>
+    </div>
+    <div class="sun-arc-grid" id="middayOptions" style="margin-top:0.5rem; margin-bottom:1.25rem;"></div>
+
+    <div class="sun-arc-grid" id="afternoonGrid">
+      <div style="grid-column:1/-1; font-size:0.8rem; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--bark); padding-bottom:0.25rem; border-bottom:1px solid var(--leaf);">🌇 Late Afternoon (4–6 PM)</div>
+    </div>
+    <div class="sun-arc-grid" id="afternoonOptions" style="margin-top:0.5rem; margin-bottom:1.25rem;"></div>
+
+    <!-- Calculated result -->
+    <div id="sunResultBox" style="display:none; background:white; border:2px solid var(--leaf); border-radius:14px; padding:1.25rem; margin-bottom:1.5rem;">
+      <div style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--bark); margin-bottom:0.5rem;">Calculated Sun Exposure</div>
+      <div class="sun-result-row">
+        <span id="sunResultBadge" class="sun-badge"></span>
+        <span id="sunResultDesc" style="font-size:0.88rem; color:var(--soil);"></span>
+      </div>
+      <div style="font-size:0.82rem; color:var(--bark); line-height:1.6;" id="sunResultTip"></div>
+    </div>
+
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+      <button class="build-next-btn" style="flex:1; min-width:160px;" id="ybSaveSection" onclick="saveSectionAndNext()" disabled>Save &amp; Next Section →</button>
+      <button onclick="skipSection()" style="padding:1rem 1.25rem; border:2px solid var(--bark); border-radius:14px; background:transparent; font-family:'DM Sans',sans-serif; font-size:0.9rem; color:var(--bark); cursor:pointer; white-space:nowrap;">Skip this section</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Summary + apply to recommendations -->
+  <div id="ybStep3" style="display:none;">
+    <h3 style="font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--soil); margin-bottom:0.4rem;">Your Yard Profile</h3>
+    <p style="font-size:0.85rem; color:var(--bark); margin-bottom:1.5rem;">Here's a summary of each section. Recommendations below are now customized for your specific conditions.</p>
+    <div class="section-summary-grid" id="yardProfileGrid"></div>
+    <button class="build-next-btn" onclick="applyYardProfile()">Apply to My Recommendations ✓</button>
+  </div>
+
+</div>
+
+<!-- Yard profile banner (shown in recommendations area) -->
+<div class="yard-profile-banner" id="yardProfileBanner">
+  <h4>🏡 Your Personalized Yard Profile</h4>
+  <div class="section-summary-grid" id="yardProfileBannerGrid"></div>
+</div>
+
+<main>
+  <div id="emptyState" class="empty-state">
+    <div class="big-icon">🏡</div>
+    <p>Enter your ZIP code above to get personalized yard recommendations and build your yard profile.</p>
+  </div>
+
+  <!-- Weather & Rainfall Card -->
+  <div class="weather-card" id="weatherCard">
+    <h3>🌧️ Precipitation &amp; Watering Guide</h3>
+    <div id="weatherContent"><div class="weather-loading"><span class="spinner"></span> Loading weather data from NWS…</div></div>
+  </div>
+
+  <!-- Climate Overview -->
+  <div class="section-card" id="climateCard">
+    <h3>🌤️ Your Local Climate</h3>
+    <div class="climate-grid" id="climateGrid"></div>
+    <div>
+      <strong style="font-size:0.82rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--bark);">USDA Zone</strong>
+      <div id="zoneText" style="margin-top:0.4rem; font-size:0.95rem;"></div>
+    </div>
+  </div>
+
+  <!-- Planting Calendar -->
+  <div class="section-card" id="calendarCard">
+    <h3>📅 Seasonal Planting Calendar</h3>
+    <div class="season-grid" id="seasonGrid"></div>
+  </div>
+
+  <!-- Grass Recommendations -->
+  <div class="section-card" id="grassCard">
+    <h3>🌾 Best Grass Types for Your Yard</h3>
+    <p style="font-size:0.88rem; color:var(--bark); margin-bottom:1rem;">Based on your sunlight and climate:</p>
+    <div class="tag-list" id="grassTags"></div>
+    <div id="grassDetails" style="margin-top:1.25rem; font-size:0.9rem; line-height:1.7; color:#444;"></div>
+  </div>
+
+  <!-- Wildlife Attraction -->
+  <div class="section-card" id="wildlifeCard">
+    <h3>🦋 Attract Wildlife to Your Yard</h3>
+    <p style="font-size:0.88rem; color:var(--bark); margin-bottom:1rem;">Select what you'd like to attract:</p>
+    <div class="wildlife-row" id="wildlifeButtons"></div>
+    <div id="wildlifeRecs" class="chat-area" style="min-height:80px;">
+      <span class="placeholder">Select wildlife above to see plant recommendations…</span>
+    </div>
+  </div>
+
+  <!-- AI Assistant -->
+  <div class="section-card" id="aiCard">
+    <h3>🤖 Ask GardenWise AI</h3>
+    <div id="aiUsageBanner" style="display:none; margin-bottom:0.75rem;"></div>
+    <p style="font-size:0.88rem; color:var(--bark); margin-bottom:1rem;">Ask anything about planting in your area:</p>
+    <div class="chat-area" id="chatOutput">
+      <span class="placeholder">Your AI gardening advisor is ready. Ask a question below!</span>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="e.g. When should I aerate my lawn?" onkeydown="if(event.key==='Enter') askAI()">
+      <button onclick="askAI()">Ask</button>
+    </div>
+  </div>
+
+  <!-- ── PRO FEATURES ─────────────────────────────────────── -->
+
+  <!-- Soil Amendment Guide (Pro) -->
+  <div class="section-card" id="soilCard">
+    <h3>🧪 Soil Amendment Guide <span class="pro-badge-inline">PRO</span></h3>
+    <p style="font-size:0.88rem; color:var(--bark); margin-bottom:1rem;">Region-specific recommendations to improve your soil before planting.</p>
+    <div id="soilContent" class="locked-feature" style="min-height:180px;">
+      <div class="lock-veil" onclick="openPaywall()">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-msg">GardenWise Pro feature</div>
+        <div class="lock-sub">Upgrade for $9.99 one-time to unlock</div>
+      </div>
+      <table class="soil-table" id="soilTable">
+        <thead><tr><th>Amendment</th><th>Purpose</th><th>Application Rate</th><th>Best Timing</th></tr></thead>
+        <tbody id="soilTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Seasonal Task Checklist (Pro) -->
+  <div class="section-card" id="taskCard">
+    <h3>✅ Seasonal Task Checklist <span class="pro-badge-inline">PRO</span></h3>
+    <p style="font-size:0.88rem; color:var(--bark); margin-bottom:1rem;">Your personalized yard to-do list — check off tasks as you complete them.</p>
+    <div id="taskContent" class="locked-feature" style="min-height:220px;">
+      <div class="lock-veil" onclick="openPaywall()">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-msg">GardenWise Pro feature</div>
+        <div class="lock-sub">Upgrade for $9.99 one-time to unlock</div>
+      </div>
+      <ul class="task-list" id="taskList"></ul>
+    </div>
+    <div id="taskProgress" style="display:none; margin-top:1rem;"></div>
+  </div>
+
+  <!-- Chemical Application Calendar (Pro) -->
+  <div class="section-card" id="chemCard">
+    <h3>🗓️ Chemical Application Calendar <span class="pro-badge-inline">PRO</span></h3>
+    <p style="font-size:0.88rem; color:var(--bark); margin-bottom:1rem;">When to apply fertilizers, herbicides, and pest controls safely and effectively.</p>
+    <div id="chemContent" class="locked-feature" style="min-height:200px;">
+      <div class="lock-veil" onclick="openPaywall()">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-msg">GardenWise Pro feature</div>
+        <div class="lock-sub">Upgrade for $9.99 one-time to unlock</div>
+      </div>
+      <div class="chem-month-grid" id="chemGrid"></div>
+    </div>
+    <div style="margin-top:0.75rem; font-size:0.75rem; color:var(--bark); line-height:1.5;">
+      ⚠️ Always read product labels. Follow all federal, state, and local regulations. Keep children and pets away from treated areas.
+    </div>
+  </div>
+
+  <!-- Regional Native Plant Library (Pro) -->
+  <div class="section-card" id="nativeCard">
+    <h3>🌿 Regional Native Plant Library <span class="pro-badge-inline">PRO</span></h3>
+    <p style="font-size:0.88rem; color:var(--bark); margin-bottom:1rem;">Native plants selected for your exact region — supports local ecosystems, requires less maintenance.</p>
+    <div id="nativeContent" class="locked-feature" style="min-height:200px;">
+      <div class="lock-veil" onclick="openPaywall()">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-msg">GardenWise Pro feature</div>
+        <div class="lock-sub">Upgrade for $9.99 one-time to unlock</div>
+      </div>
+      <div class="native-grid" id="nativeGrid"></div>
+    </div>
+  </div>
+
+  <!-- Export Yard Profile (Pro) -->
+  <div class="section-card" id="exportCard">
+    <h3>📄 Export Yard Profile <span class="pro-badge-inline">PRO</span></h3>
+    <p style="font-size:0.88rem; color:var(--bark); margin-bottom:1rem;">Download a complete summary of your yard profile, recommendations, and seasonal plan.</p>
+    <div id="exportContent">
+      <div class="lock-veil" onclick="openPaywall()" style="position:relative; height:80px; background:var(--cream); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.4rem; cursor:pointer;">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-msg" style="font-size:0.82rem; font-weight:600; color:var(--soil);">GardenWise Pro feature — Upgrade for $9.99 one-time</div>
+      </div>
+    </div>
+    <div id="exportBtns" style="display:none; display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem;">
+      <button onclick="exportProfile('pdf')" style="padding:0.7rem 1.4rem; background:var(--moss); color:white; border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.9rem; cursor:pointer;">⬇ Download PDF</button>
+      <button onclick="exportProfile('print')" style="padding:0.7rem 1.4rem; background:transparent; border:2px solid var(--moss); color:var(--moss); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.9rem; cursor:pointer;">🖨 Print</button>
+    </div>
+  </div>
+
+  </div>
+</main>
+
+<!-- ── Species Identifier Section ───────────────────────────────────────── -->
+<div style="background: linear-gradient(135deg, #2c3e1f 0%, var(--soil) 100%); padding: 3rem 2rem; text-align:center; margin-top: 1rem;">
+  <div style="max-width:700px; margin:0 auto;">
+    <div style="font-size:2.5rem; margin-bottom:0.75rem;">🔬</div>
+    <h2 style="font-family:'Playfair Display',serif; color:var(--cream); font-size:clamp(1.5rem,4vw,2.5rem); margin-bottom:0.75rem;">Species Identifier</h2>
+    <p style="color:var(--leaf); font-size:1rem; font-weight:300; max-width:480px; margin:0 auto;">Photograph a weed, tree, plant, insect, or fungus and let AI identify it — including invasive species warnings and removal guidance.</p>
+  </div>
+</div>
+
+<div style="max-width:900px; margin:0 auto; padding: 2rem 1.5rem;">
+  <div class="identifier-card">
+    <!-- Upload zone -->
+    <div class="upload-zone" id="uploadZone" ondragover="handleDrag(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
+      <div class="upload-icon">📸</div>
+      <p><strong>Take a photo or upload an image</strong></p>
+      <p style="margin-top:0.4rem; font-size:0.82rem;">Tap to open camera &middot; Drag &amp; drop &middot; Or browse files</p>
+      <div class="upload-type-row">
+        <span class="type-badge">🌿 Plants &amp; Weeds</span>
+        <span class="type-badge">🌳 Trees &amp; Shrubs</span>
+        <span class="type-badge">🐛 Insects</span>
+        <span class="type-badge">🍄 Fungi</span>
+        <span class="type-badge">🌸 Flowers</span>
+      </div>
+    </div>
+    <!-- Image preview -->
+    <div class="preview-wrap" id="previewWrap">
+      <img id="previewImg" src="" alt="Uploaded photo">
+      <button class="change-btn" onclick="resetUpload()">&#x2715; Change Photo</button>
+    </div>
+    <button class="identify-btn" id="identifyBtn" onclick="identifySpecies()">🔍 Identify This Species</button>
+    <!-- Results -->
+    <div class="id-result" id="idResult">
+      <div class="id-header">
+        <div class="id-badge" id="resultIcon">🌿</div>
+        <div class="id-names">
+          <h4 id="resultCommonName">Loading…</h4>
+          <div class="sci-name" id="resultSciName"></div>
+        </div>
+      </div>
+      <div id="invasiveBanner"></div>
+      <div class="id-section-title">About This Species</div>
+      <div class="id-body" id="resultAbout"></div>
+      <div id="removalSection" style="display:none;">
+        <div class="id-section-title">⚠️ Removal &amp; Control Methods</div>
+        <div class="removal-methods" id="removalMethods"></div>
+        <div class="disclaimer-note">
+          ⚠️ <strong>Chemical Use Disclaimer:</strong> Always read and follow pesticide/herbicide label instructions. Some products may be restricted in certain states or localities. Check with your local Cooperative Extension Service or state Department of Agriculture for region-specific regulations. Keep children and pets away from treated areas per label directions.
+        </div>
+      </div>
+      <div id="beneficialSection" style="display:none;">
+        <div class="id-section-title">✅ Benefits &amp; Encouragement</div>
+        <div class="id-body" id="beneficialText"></div>
+      </div>
+      <button class="new-scan-btn" onclick="resetUpload()">📸 Identify Another Species</button>
+    </div>
+  </div>
+</div>
+
+<footer>GardenWise &middot; AI identifications are for informational purposes. Always verify with local extension services before applying any chemical treatments.</footer>
+
+<script>
+// ── Proxy Configuration ───────────────────────────────────────────────────────
+//
+// IMPORTANT: Replace this URL with your Cloudflare Worker URL after deploying.
+// See gardenwise-proxy/README.md for full setup instructions.
+//
+// Your Worker URL will look like:
+//   https://gardenwise-proxy.YOURNAME.workers.dev
+//
+// The app sends requests to YOUR server, which holds the API key securely.
+// Never put your Anthropic API key directly in this file.
+
+const PROXY_URL = 'https://REPLACE_WITH_YOUR_WORKER_URL.workers.dev';
+
+// Helper: call the proxy instead of Anthropic directly
+async function callClaude(payload, endpoint = '/api/claude') {
+  const tier = getTier();
+  const response = await fetch(PROXY_URL + endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-GW-Tier': tier,             // tells server which limits to apply
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    // If server returned a free-limit-exceeded signal, open the paywall
+    if (response.status === 402 || err.upgradeRequired) {
+      openPaywall();
+      throw new Error(err.message || 'Upgrade required');
+    }
+    if (response.status === 429) {
+      throw new Error('Too many requests — please wait a moment and try again.');
+    }
+    throw new Error(err.error || `Server error ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// ── Build Your Yard ───────────────────────────────────────────────────────────
+
+const YARD_SECTIONS = {
+  front:  { label: 'Front Yard',  icon: '🏠' },
+  back:   { label: 'Back Yard',   icon: '🌿' },
+  left:   { label: 'Left Side',   icon: '◀️' },
+  right:  { label: 'Right Side',  icon: '▶️' },
+  garden: { label: 'Garden Bed',  icon: '🌻' },
+};
+
+let selectedSections = [];
+let sectionConfigs = {};  // { front: { morning:'full', midday:'full', afternoon:'part', result:'full-sun' }, ... }
+let currentConfigSection = null;
+let configQueue = [];
+let currentTimeSelections = {};
+
+const SUN_SVG = {
+  full: (period) => {
+    // Full sun: bright arc, ground fully lit
+    const colors = { morning:'#F59E0B', midday:'#EF4444', afternoon:'#F97316' };
+    const c = colors[period] || '#EF4444';
+    const arcPaths = {
+      morning: 'M20,70 A50,50 0 0,1 100,70',
+      midday:  'M10,75 A55,40 0 0,1 110,75',
+      afternoon:'M20,70 A50,50 0 0,1 100,70'
+    };
+    const sunX = { morning:30, midday:60, afternoon:90 };
+    return `<svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="68" width="120" height="22" fill="#86EFAC" rx="2"/>
+      <path d="${arcPaths[period]}" fill="none" stroke="#D1D5DB" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <circle cx="${sunX[period]}" cy="${period==='midday'?28:55}" r="14" fill="${c}" opacity="0.9"/>
+      <line x1="${sunX[period]}" y1="${period==='midday'?14:41}" x2="${sunX[period]}" y2="${period==='midday'?8:35}" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+      <line x1="${sunX[period]+10}" y1="${period==='midday'?20:48}" x2="${sunX[period]+14}" y2="${period==='midday'?16:44}" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+      <line x1="${sunX[period]-10}" y1="${period==='midday'?20:48}" x2="${sunX[period]-14}" y2="${period==='midday'?16:44}" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+      <rect x="0" y="68" width="120" height="4" fill="${c}" opacity="0.3"/>
+    </svg>`;
+  },
+  partial: (period) => {
+    const arcPaths = { morning:'M20,70 A50,50 0 0,1 100,70', midday:'M10,75 A55,40 0 0,1 110,75', afternoon:'M20,70 A50,50 0 0,1 100,70' };
+    const sunX = { morning:30, midday:60, afternoon:90 };
+    const sy = period==='midday' ? 28 : 55;
+    return `<svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="68" width="120" height="22" fill="#BBF7D0" rx="2"/>
+      <path d="${arcPaths[period]}" fill="none" stroke="#D1D5DB" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <circle cx="${sunX[period]}" cy="${sy}" r="14" fill="#FCD34D" opacity="0.85"/>
+      <rect x="${sunX[period]+4}" y="${sy-18}" width="22" height="38" fill="#6B7280" opacity="0.45" rx="3" transform="rotate(-10,${sunX[period]+4},${sy})"/>
+      <rect x="0" y="68" width="60" height="4" fill="#FCD34D" opacity="0.4"/>
+      <rect x="60" y="68" width="60" height="4" fill="#6B7280" opacity="0.2"/>
+    </svg>`;
+  },
+  shade: () => `<svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="68" width="120" height="22" fill="#D1FAE5" rx="2"/>
+    <circle cx="60" cy="35" r="14" fill="#FCD34D" opacity="0.3"/>
+    <rect x="15" y="20" width="90" height="50" fill="#374151" opacity="0.5" rx="6"/>
+    <rect x="0" y="68" width="120" height="4" fill="#6B7280" opacity="0.3"/>
+    <text x="60" y="52" text-anchor="middle" font-size="10" fill="#9CA3AF" font-family="sans-serif">shade</text>
+  </svg>`,
+};
+
+const SUN_OPTIONS = [
+  { val:'full',    label:'Full Sun',     sub:'No obstacles blocking sun', svgFn: (p)=>SUN_SVG.full(p) },
+  { val:'partial', label:'Partial Sun',  sub:'Some shade during the day',  svgFn: (p)=>SUN_SVG.partial(p) },
+  { val:'shade',   label:'Full Shade',   sub:'Mostly shaded all day',      svgFn: ()=>SUN_SVG.shade() },
+];
+
+const SUN_CALC = {
+  'full-full-full':         { result:'full-sun',   badge:'☀️ Full Sun',       desc:'6+ hrs direct sun daily', tip:'Ideal for sun-loving plants: tomatoes, roses, lavender, most grasses.' },
+  'full-full-partial':      { result:'full-sun',   badge:'☀️ Full Sun',       desc:'~5–6 hrs direct sun',     tip:'Still full sun territory. Most vegetables and lawn grasses thrive here.' },
+  'full-full-shade':        { result:'part-sun',   badge:'🌤 Part Sun',       desc:'4–5 hrs direct sun',      tip:'Good for peppers, herbs, daylilies. Avoid heavy shade plants.' },
+  'full-partial-full':      { result:'part-sun',   badge:'🌤 Part Sun',       desc:'~5 hrs direct sun',       tip:'Works well for many vegetables and ornamentals.' },
+  'full-partial-partial':   { result:'part-sun',   badge:'🌤 Part Sun',       desc:'4–5 hrs direct sun',      tip:'Great for impatiens, astilbe, ferns with morning sun.' },
+  'full-partial-shade':     { result:'part-shade', badge:'🌥 Part Shade',     desc:'2–4 hrs direct sun',      tip:'Try hostas, bleeding hearts, coral bells.' },
+  'full-shade-full':        { result:'part-sun',   badge:'🌤 Part Sun',       desc:'~4 hrs sun',              tip:'Morning and afternoon sun compensates for midday shade.' },
+  'full-shade-partial':     { result:'part-shade', badge:'🌥 Part Shade',     desc:'2–3 hrs direct sun',      tip:'Ideal for shade-tolerant ornamentals and ground covers.' },
+  'full-shade-shade':       { result:'part-shade', badge:'🌥 Part Shade',     desc:'~2 hrs direct sun',       tip:'Hostas, ferns, and astilbe are your best friends here.' },
+  'partial-full-full':      { result:'full-sun',   badge:'☀️ Full Sun',       desc:'~5–6 hrs direct sun',     tip:'Afternoon full sun is very powerful. Sun-tolerant plants will thrive.' },
+  'partial-full-partial':   { result:'part-sun',   badge:'🌤 Part Sun',       desc:'~4–5 hrs direct sun',     tip:'A wide variety of perennials and vegetables work well.' },
+  'partial-full-shade':     { result:'part-sun',   badge:'🌤 Part Sun',       desc:'~4 hrs direct sun',       tip:'Avoid plants that need all-day sun; herbs and salad greens are great.' },
+  'partial-partial-full':   { result:'part-sun',   badge:'🌤 Part Sun',       desc:'~4 hrs direct sun',       tip:'Good balance; try echinacea, salvia, or ornamental grasses.' },
+  'partial-partial-partial':{ result:'part-shade', badge:'🌥 Part Shade',     desc:'2–3 hrs direct sun',      tip:'Native wildflowers and shade-tolerant perennials excel here.' },
+  'partial-partial-shade':  { result:'part-shade', badge:'🌥 Part Shade',     desc:'~2 hrs direct sun',       tip:'Hostas, heuchera, and impatiens will love this spot.' },
+  'partial-shade-full':     { result:'part-shade', badge:'🌥 Part Shade',     desc:'~2–3 hrs sun',            tip:'Afternoon heat with morning shade is manageable for tough perennials.' },
+  'partial-shade-partial':  { result:'part-shade', badge:'🌥 Part Shade',     desc:'~2 hrs direct sun',       tip:'Great for ferns, bleeding hearts, and shade-loving groundcovers.' },
+  'partial-shade-shade':    { result:'full-shade', badge:'🌑 Full Shade',     desc:'<2 hrs direct sun',       tip:'Focus on hostas, pachysandra, ferns, or native woodland plants.' },
+  'shade-full-full':        { result:'part-sun',   badge:'🌤 Part Sun',       desc:'~4 hrs sun',              tip:'Mid and late sun saves this spot. Try tough perennials and ornamental grasses.' },
+  'shade-full-partial':     { result:'part-shade', badge:'🌥 Part Shade',     desc:'~2–3 hrs sun',            tip:'Bleeding hearts, astilbe, and coral bells thrive.' },
+  'shade-full-shade':       { result:'part-shade', badge:'🌥 Part Shade',     desc:'~2 hrs sun',              tip:'Midday-only sun. Try hostas with bright pops of astilbe.' },
+  'shade-partial-full':     { result:'part-shade', badge:'🌥 Part Shade',     desc:'~2–3 hrs sun',            tip:'Late-day sun helps but morning shade keeps things cool.' },
+  'shade-partial-partial':  { result:'full-shade', badge:'🌑 Full Shade',     desc:'<2 hrs direct sun',       tip:'This spot needs shade-loving natives: ferns, wild ginger, lungwort.' },
+  'shade-partial-shade':    { result:'full-shade', badge:'🌑 Full Shade',     desc:'<1 hr direct sun',        tip:'Deep shade. Try pachysandra, epimedium, or moss as a ground cover.' },
+  'shade-shade-full':       { result:'part-shade', badge:'🌥 Part Shade',     desc:'~2 hrs sun',              tip:'Strong afternoon sun only. Tough native groundcovers work well.' },
+  'shade-shade-partial':    { result:'full-shade', badge:'🌑 Full Shade',     desc:'<1 hr direct sun',        tip:'Very shaded. Focus on structural plants like ferns and hostas.' },
+  'shade-shade-shade':      { result:'full-shade', badge:'🌑 Full Shade',     desc:'Near-full shade all day', tip:'Deep shade zone. Moss, pachysandra, and epimedium are your best options.' },
+};
+
+function showYardBuilder() {
+  document.getElementById('yardBuilderHero').style.display = 'block';
+  document.getElementById('yardBuilderBody').style.display = 'block';
+  renderStepDots(1);
+}
+
+function renderStepDots(currentStep) {
+  const dots = document.getElementById('yardStepDots');
+  const labels = ['Select Sections','Set Sun Conditions','Review Profile'];
+  dots.innerHTML = labels.map((l,i) => {
+    const n = i+1;
+    let cls = n < currentStep ? 'done' : n === currentStep ? 'active' : '';
+    return `<div class="yard-step-dot ${cls}" title="${l}"></div>`;
+  }).join('');
+}
+
+function toggleYardSection(key) {
+  const tile = document.getElementById('tile-'+key);
+  const idx = selectedSections.indexOf(key);
+  if (idx === -1) {
+    selectedSections.push(key);
+    tile.classList.add('active');
+    tile.querySelector('.tile-status').textContent = 'Selected';
+  } else {
+    selectedSections.splice(idx, 1);
+    tile.classList.remove('active', 'configured');
+    tile.querySelector('.tile-status').textContent = 'Not configured';
+  }
+  document.getElementById('ybStep1Btn').disabled = selectedSections.length === 0;
+}
+
+function goToStep2() {
+  document.getElementById('ybStep1').style.display = 'none';
+  document.getElementById('ybStep2').style.display = 'block';
+  configQueue = [...selectedSections];
+  renderStepDots(2);
+  loadNextSection();
+}
+
+function loadNextSection() {
+  currentConfigSection = configQueue.shift();
+  if (!currentConfigSection) { goToStep3(); return; }
+  currentTimeSelections = {};
+  document.getElementById('ybSaveSection').disabled = true;
+  document.getElementById('sunResultBox').style.display = 'none';
+  const info = YARD_SECTIONS[currentConfigSection];
+  document.getElementById('ybSectionTitle').innerHTML = `${info.icon} ${info.label} &mdash; Sun &amp; Shade`;
+
+  ['morning','midday','afternoon'].forEach(period => {
+    const el = document.getElementById(period+'Options');
+    el.innerHTML = SUN_OPTIONS.map(opt => `
+      <div class="arc-card" id="${period}-${opt.val}" onclick="selectTimeOption('${period}','${opt.val}')">
+        ${opt.svgFn(period)}
+        <div class="arc-label">${opt.label}</div>
+        <div class="arc-sub">${opt.sub}</div>
+      </div>
+    `).join('');
+  });
+}
+
+function selectTimeOption(period, val) {
+  // Clear previous selection for this period
+  SUN_OPTIONS.forEach(o => {
+    const el = document.getElementById(`${period}-${o.val}`);
+    if (el) el.classList.remove('selected');
+  });
+  document.getElementById(`${period}-${val}`).classList.add('selected');
+  currentTimeSelections[period] = val;
+
+  if (currentTimeSelections.morning && currentTimeSelections.midday && currentTimeSelections.afternoon) {
+    calcSunResult();
+  }
+}
+
+function calcSunResult() {
+  const key = `${currentTimeSelections.morning}-${currentTimeSelections.midday}-${currentTimeSelections.afternoon}`;
+  const info = SUN_CALC[key] || { result:'variable', badge:'🌤 Variable', desc:'Mixed conditions', tip:'This area has varied sun — choose adaptable plants.' };
+  const box = document.getElementById('sunResultBox');
+  const badge = document.getElementById('sunResultBadge');
+  const desc = document.getElementById('sunResultDesc');
+  const tip = document.getElementById('sunResultTip');
+
+  badge.className = 'sun-badge ' + info.result;
+  badge.textContent = info.badge;
+  desc.textContent = info.desc;
+  tip.textContent = '💡 ' + info.tip;
+  box.style.display = 'block';
+
+  // Store
+  currentTimeSelections.result = info;
+  document.getElementById('ybSaveSection').disabled = false;
+}
+
+function saveSectionAndNext() {
+  sectionConfigs[currentConfigSection] = {
+    morning: currentTimeSelections.morning,
+    midday: currentTimeSelections.midday,
+    afternoon: currentTimeSelections.afternoon,
+    result: currentTimeSelections.result,
+  };
+  const tile = document.getElementById('tile-'+currentConfigSection);
+  if (tile) {
+    tile.classList.add('configured');
+    tile.querySelector('.tile-status').textContent = currentTimeSelections.result.badge;
+  }
+  loadNextSection();
+}
+
+function skipSection() {
+  sectionConfigs[currentConfigSection] = null;
+  loadNextSection();
+}
+
+function goToStep3() {
+  document.getElementById('ybStep2').style.display = 'none';
+  document.getElementById('ybStep3').style.display = 'block';
+  renderStepDots(3);
+  const grid = document.getElementById('yardProfileGrid');
+  grid.innerHTML = selectedSections.map(key => {
+    const s = YARD_SECTIONS[key];
+    const cfg = sectionConfigs[key];
+    const badge = cfg ? cfg.result.badge : '— Skipped';
+    const tip = cfg ? cfg.result.tip : 'No data entered.';
+    return `<div class="section-summary-card">
+      <div class="ss-name">${s.icon} ${s.label}</div>
+      <div class="sun-badge ${cfg ? cfg.result.result : ''}" style="font-size:0.75rem; padding:0.25rem 0.75rem; display:inline-block; margin-bottom:0.5rem;">${badge}</div>
+      <div class="ss-sun">${tip}</div>
+    </div>`;
+  }).join('');
+}
+
+function applyYardProfile() {
+  document.getElementById('yardBuilderHero').style.display = 'none';
+  document.getElementById('yardBuilderBody').style.display = 'none';
+  // Show profile banner
+  const banner = document.getElementById('yardProfileBanner');
+  const grid = document.getElementById('yardProfileBannerGrid');
+  grid.innerHTML = selectedSections.map(key => {
+    const s = YARD_SECTIONS[key];
+    const cfg = sectionConfigs[key];
+    const badge = cfg ? cfg.result.badge : '—';
+    return `<div class="section-summary-card">
+      <div class="ss-name">${s.icon} ${s.label}</div>
+      <div class="sun-badge ${cfg ? cfg.result.result : ''}" style="font-size:0.72rem; padding:0.2rem 0.6rem; display:inline-block;">${badge}</div>
+    </div>`;
+  }).join('');
+  banner.classList.add('visible');
+  banner.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ── Region database keyed by ZIP prefix ──────────────────────────────────────
+const REGION_DATA = {
+  // Northeast
+  '01': { region:'Northeast', state:'MA', city:'Massachusetts', zone:'6a', avgTemp:'52°F', rainfall:'47"', sunlight:'Moderate', soil:'Loamy/Acidic', frostFree:'May–Oct' },
+  '02': { region:'Northeast', state:'RI/MA', city:'Rhode Island / S. Mass', zone:'6b', avgTemp:'52°F', rainfall:'46"', sunlight:'Moderate', soil:'Sandy/Loamy', frostFree:'May–Oct' },
+  '06': { region:'Northeast', state:'CT', city:'Connecticut', zone:'6b', avgTemp:'52°F', rainfall:'48"', sunlight:'Moderate', soil:'Loamy/Rocky', frostFree:'May–Oct' },
+  '07': { region:'Northeast', state:'NJ', city:'New Jersey', zone:'7a', avgTemp:'56°F', rainfall:'46"', sunlight:'Moderate–High', soil:'Sandy/Clay', frostFree:'Apr–Nov' },
+  '08': { region:'Northeast', state:'NJ', city:'South Jersey', zone:'7b', avgTemp:'58°F', rainfall:'44"', sunlight:'High', soil:'Sandy', frostFree:'Apr–Nov' },
+  '10': { region:'Northeast', state:'NY', city:'New York City', zone:'7b', avgTemp:'57°F', rainfall:'50"', sunlight:'Moderate', soil:'Urban/Clay', frostFree:'Apr–Nov' },
+  '11': { region:'Northeast', state:'NY', city:'Long Island', zone:'7a', avgTemp:'56°F', rainfall:'45"', sunlight:'Moderate–High', soil:'Sandy/Loamy', frostFree:'Apr–Nov' },
+  '12': { region:'Northeast', state:'NY', city:'Upstate NY', zone:'5b', avgTemp:'48°F', rainfall:'38"', sunlight:'Moderate', soil:'Clay/Loamy', frostFree:'May–Sep' },
+  '15': { region:'Northeast', state:'PA', city:'Western Pennsylvania', zone:'6a', avgTemp:'51°F', rainfall:'38"', sunlight:'Moderate', soil:'Clay/Loamy', frostFree:'May–Oct' },
+  '17': { region:'Northeast', state:'PA', city:'Central Pennsylvania', zone:'6b', avgTemp:'53°F', rainfall:'40"', sunlight:'Moderate', soil:'Loamy/Silt', frostFree:'May–Oct' },
+  '19': { region:'Northeast', state:'PA/DE', city:'Philadelphia Area', zone:'7a', avgTemp:'57°F', rainfall:'41"', sunlight:'Moderate–High', soil:'Clay/Loamy', frostFree:'Apr–Nov' },
+  // Mid-Atlantic / Southeast
+  '20': { region:'Mid-Atlantic', state:'DC/MD', city:'Washington D.C. Area', zone:'7a', avgTemp:'59°F', rainfall:'40"', sunlight:'Moderate–High', soil:'Clay', frostFree:'Apr–Nov' },
+  '21': { region:'Mid-Atlantic', state:'MD', city:'Maryland', zone:'7a', avgTemp:'58°F', rainfall:'42"', sunlight:'Moderate–High', soil:'Clay/Loamy', frostFree:'Apr–Nov' },
+  '22': { region:'Mid-Atlantic', state:'VA', city:'Northern Virginia', zone:'7a', avgTemp:'58°F', rainfall:'40"', sunlight:'High', soil:'Clay', frostFree:'Apr–Nov' },
+  '23': { region:'Mid-Atlantic', state:'VA', city:'Richmond Area', zone:'7b', avgTemp:'60°F', rainfall:'43"', sunlight:'High', soil:'Clay/Sandy', frostFree:'Apr–Nov' },
+  '24': { region:'Mid-Atlantic', state:'VA/WV', city:'Southwest Virginia', zone:'6a', avgTemp:'54°F', rainfall:'42"', sunlight:'Moderate', soil:'Loamy/Rocky', frostFree:'May–Oct' },
+  '27': { region:'Southeast', state:'NC', city:'Central North Carolina', zone:'7b', avgTemp:'62°F', rainfall:'46"', sunlight:'High', soil:'Red Clay', frostFree:'Apr–Nov' },
+  '28': { region:'Southeast', state:'NC', city:'Charlotte Area', zone:'8a', avgTemp:'64°F', rainfall:'44"', sunlight:'High', soil:'Clay/Sandy', frostFree:'Mar–Nov' },
+  '29': { region:'Southeast', state:'SC', city:'South Carolina', zone:'8a', avgTemp:'66°F', rainfall:'48"', sunlight:'High', soil:'Sandy/Clay', frostFree:'Mar–Dec' },
+  '30': { region:'Southeast', state:'GA', city:'Atlanta Area', zone:'8a', avgTemp:'65°F', rainfall:'50"', sunlight:'High', soil:'Red Clay', frostFree:'Mar–Nov' },
+  '32': { region:'Southeast', state:'FL', city:'North Florida', zone:'9a', avgTemp:'70°F', rainfall:'55"', sunlight:'Very High', soil:'Sandy', frostFree:'Year-round' },
+  '33': { region:'Southeast', state:'FL', city:'Miami/S. Florida', zone:'10b', avgTemp:'78°F', rainfall:'62"', sunlight:'Very High', soil:'Sandy/Limestone', frostFree:'Year-round' },
+  // Midwest
+  '43': { region:'Midwest', state:'OH', city:'Columbus Area', zone:'6a', avgTemp:'52°F', rainfall:'37"', sunlight:'Moderate', soil:'Clay/Loamy', frostFree:'May–Oct' },
+  '48': { region:'Midwest', state:'MI', city:'Southern Michigan', zone:'5b', avgTemp:'49°F', rainfall:'32"', sunlight:'Moderate', soil:'Sandy/Clay', frostFree:'May–Sep' },
+  '53': { region:'Midwest', state:'WI', city:'Wisconsin', zone:'5a', avgTemp:'46°F', rainfall:'32"', sunlight:'Moderate', soil:'Loamy', frostFree:'May–Sep' },
+  '60': { region:'Midwest', state:'IL', city:'Chicago Area', zone:'5b', avgTemp:'50°F', rainfall:'36"', sunlight:'Moderate', soil:'Clay/Loamy', frostFree:'May–Oct' },
+  '63': { region:'Midwest', state:'MO', city:'St. Louis Area', zone:'6b', avgTemp:'57°F', rainfall:'39"', sunlight:'Moderate–High', soil:'Clay/Loamy', frostFree:'Apr–Nov' },
+  // South / Plains
+  '35': { region:'South', state:'AL', city:'Alabama', zone:'8a', avgTemp:'65°F', rainfall:'55"', sunlight:'High', soil:'Clay/Sandy', frostFree:'Mar–Nov' },
+  '37': { region:'South', state:'TN', city:'Tennessee', zone:'7a', avgTemp:'60°F', rainfall:'52"', sunlight:'High', soil:'Clay/Loamy', frostFree:'Apr–Nov' },
+  '39': { region:'South', state:'MS', city:'Mississippi', zone:'8a', avgTemp:'66°F', rainfall:'56"', sunlight:'High', soil:'Clay/Loamy', frostFree:'Mar–Nov' },
+  '70': { region:'South', state:'LA', city:'Louisiana', zone:'9a', avgTemp:'70°F', rainfall:'62"', sunlight:'High', soil:'Clay/Alluvial', frostFree:'Mar–Dec' },
+  '73': { region:'South/Plains', state:'OK', city:'Oklahoma City', zone:'7a', avgTemp:'61°F', rainfall:'35"', sunlight:'High', soil:'Clay/Red', frostFree:'Apr–Nov' },
+  '75': { region:'South', state:'TX', city:'Dallas/Fort Worth', zone:'8a', avgTemp:'66°F', rainfall:'37"', sunlight:'High', soil:'Black Clay', frostFree:'Mar–Nov' },
+  '77': { region:'South', state:'TX', city:'Houston Area', zone:'9a', avgTemp:'70°F', rainfall:'50"', sunlight:'High', soil:'Clay', frostFree:'Feb–Dec' },
+  '78': { region:'South', state:'TX', city:'San Antonio / Austin', zone:'8b', avgTemp:'70°F', rainfall:'32"', sunlight:'Very High', soil:'Caliche/Clay', frostFree:'Mar–Dec' },
+  // Mountain / Southwest
+  '80': { region:'Mountain', state:'CO', city:'Denver Area', zone:'6a', avgTemp:'51°F', rainfall:'14"', sunlight:'Very High', soil:'Sandy/Clay', frostFree:'May–Oct' },
+  '85': { region:'Southwest', state:'AZ', city:'Phoenix Area', zone:'10a', avgTemp:'75°F', rainfall:'8"', sunlight:'Extreme', soil:'Sandy/Caliche', frostFree:'Year-round' },
+  '87': { region:'Southwest', state:'NM', city:'Albuquerque', zone:'7b', avgTemp:'57°F', rainfall:'9"', sunlight:'Very High', soil:'Sandy/Alkaline', frostFree:'Apr–Nov' },
+  '89': { region:'Southwest', state:'NV', city:'Las Vegas Area', zone:'9b', avgTemp:'67°F', rainfall:'4"', sunlight:'Extreme', soil:'Sandy/Caliche', frostFree:'Mar–Dec' },
+  // Pacific
+  '90': { region:'Pacific', state:'CA', city:'Los Angeles Area', zone:'10a', avgTemp:'66°F', rainfall:'15"', sunlight:'Very High', soil:'Sandy/Clay', frostFree:'Year-round' },
+  '94': { region:'Pacific', state:'CA', city:'San Francisco Bay Area', zone:'9b', avgTemp:'58°F', rainfall:'22"', sunlight:'Moderate–High', soil:'Clay/Loamy', frostFree:'Year-round' },
+  '97': { region:'Pacific Northwest', state:'OR', city:'Oregon', zone:'8b', avgTemp:'52°F', rainfall:'44"', sunlight:'Low–Moderate', soil:'Loamy/Volcanic', frostFree:'Apr–Nov' },
+  '98': { region:'Pacific Northwest', state:'WA', city:'Seattle/Western WA', zone:'8b', avgTemp:'52°F', rainfall:'38"', sunlight:'Low', soil:'Loamy/Clay', frostFree:'Apr–Nov' },
+  '99': { region:'Pacific Northwest', state:'WA/ID', city:'Eastern WA / Idaho', zone:'6b', avgTemp:'50°F', rainfall:'18"', sunlight:'High', soil:'Loamy/Volcanic', frostFree:'May–Oct' },
+};
+
+// ── Seasonal calendars by region ─────────────────────────────────────────────
+const SEASON_DATA = {
+  Northeast: {
+    spring: ['Cool-season veggies (lettuce, spinach)', 'Peas & broccoli', 'Native wildflowers', 'Bare-root trees'],
+    summer: ['Tomatoes, peppers, squash', 'Warm-season annuals', 'Lawn overseeding (late)', 'Perennials'],
+    fall: ['Garlic & spring bulbs', 'Cool-season greens', 'Lawn renovation', 'Shrubs & trees'],
+    winter: ['Plan & order seeds', 'Prune dormant trees', 'Soil amendments', 'Indoor seedlings (Feb)'],
+  },
+  'Mid-Atlantic': {
+    spring: ['Vegetables (Mar–May)', 'Native perennials', 'Warm-season grass seed', 'Fruit trees'],
+    summer: ['Tomatoes, melons, corn', 'Pollinator plants', 'Summer annuals', 'Containers'],
+    fall: ['Fall veggies & greens', 'Bulbs (tulips, daffodils)', 'Fescue overseeding', 'Trees & shrubs'],
+    winter: ['Hardscape projects', 'Seed catalogs', 'Pruning (Jan–Feb)', 'Soil testing'],
+  },
+  Southeast: {
+    spring: ['Warm-season veggies (Mar)', 'Azaleas & camellias', 'Bermuda/Zoysia grass', 'Annuals'],
+    summer: ['Heat-tolerant veggies', 'Native wildflowers', 'Maintenance & mulching', 'Tropical plants'],
+    fall: ['Cool-season veggies (Sept)', 'Pansies & snapdragons', 'Overseeed with rye', 'Perennials'],
+    winter: ['Camellias bloom', 'Cool-season crops', 'Planning & pruning', 'Fertilize lawns (FL only)'],
+  },
+  Midwest: {
+    spring: ['Start seeds indoors (Mar)', 'Cool-season crops (Apr)', 'Perennials & ornamentals', 'Trees after frost'],
+    summer: ['Full vegetable garden', 'Native prairie plants', 'Lawn fertilizing', 'Annual flowers'],
+    fall: ['Root vegetables', 'Garlic planting', 'Leaf mulching beds', 'Spring bulbs'],
+    winter: ['Seed ordering', 'Pruning fruit trees', 'Indoor plants', 'Soil amendment planning'],
+  },
+  South: {
+    spring: ['Warm-season crops early', 'St. Augustine grass', 'Tropical plants', 'Fruiting trees'],
+    summer: ['Heat-tolerant plants only', 'Irrigation focus', 'Drought-hardy perennials', 'Raise mowing height'],
+    fall: ['Best planting season', 'Cool-season crops', 'Trees, shrubs & perennials', 'Bermuda overseed'],
+    winter: ['Cool-season veggies', 'Camellias & pansies', 'Lawn dormancy care', 'Citrus harvest'],
+  },
+  Mountain: {
+    spring: ['Short season crops (late May)', 'Native wildflowers', 'Hardy perennials', 'Xeriscape plants'],
+    summer: ['Quick-maturing veggies', 'Native grasses', 'Water-wise plants', 'Raised beds'],
+    fall: ['Root crops', 'Spring bulbs', 'Overseeding cool-season grass', 'Evergreen trees'],
+    winter: ['Seed planning', 'Mulch protection', 'Indoor starts (Feb)', 'Snow melt awareness'],
+  },
+  Southwest: {
+    spring: ['Desert wildflowers', 'Warm-season veggies', 'Drought-adapted perennials', 'Cacti & succulents'],
+    summer: ['Monsoon planting (AZ)', 'Heat-resistant plants', 'Native shrubs', 'Shade plants'],
+    fall: ['Best planting season', 'Cool-season veggies', 'Trees & shrubs', 'Wildflower seeds'],
+    winter: ['Citrus harvest', 'Cool-season crops', 'Annual color plants', 'Desert perennials'],
+  },
+  'Pacific Northwest': {
+    spring: ['Start seeds (Feb indoor)', 'Brassicas & greens', 'Perennials after rain', 'Berries'],
+    summer: ['Tomatoes (July–Aug)', 'Beans, squash, corn', 'Native plants', 'Herbs'],
+    fall: ['Garlic & cover crops', 'Spring bulbs', 'Overseeding lawns', 'Shrubs & trees'],
+    winter: ['Pruning fruit trees', 'Cool-season crops (mild zones)', 'Planning', 'Bare-root planting'],
+  },
+  Pacific: {
+    spring: ['Cool-season crops (Feb)', 'Native perennials', 'Warm-season start (Apr)', 'Succulents'],
+    summer: ['Mediterranean plants', 'Drought-tolerant perennials', 'Tomatoes & peppers', 'Water-wise'],
+    fall: ['Best planting season', 'Rain garden plants', 'Cool-season crops', 'Trees & shrubs'],
+    winter: ['Bare-root fruit trees', 'Cool-season veggies', 'Native plants', 'Citrus care'],
+  },
+};
+
+// ── Grass recommendations by zone/region ─────────────────────────────────────
+const GRASS_DATA = {
+  cold: { tags: ['Kentucky Bluegrass','Fescue (Tall/Fine)','Perennial Ryegrass','Creeping Bentgrass'], detail: 'Cool-season grasses thrive in your climate. Kentucky Bluegrass offers a beautiful dense lawn but needs full sun. Tall Fescue is more drought and shade tolerant, making it ideal for mixed-light yards. Overseed in early fall for best results.' },
+  transition: { tags: ['Tall Fescue','Zoysia','Bermudagrass','Perennial Ryegrass'], detail: 'You\'re in the transition zone — both cool and warm-season grasses can work. Tall Fescue is the most reliable year-round. Zoysia offers excellent drought tolerance and a lush feel, going dormant in winter. Bermudagrass excels in full sun.' },
+  warm: { tags: ['Bermudagrass','Zoysia','St. Augustine','Centipede Grass'], detail: 'Warm-season grasses dominate your climate. Bermudagrass is tough and fast-growing in full sun. St. Augustine handles shade well and has a coarse texture. Zoysia is a premium option requiring less fertilizer. Centipede is low-maintenance for acidic soils.' },
+  hot: { tags: ['St. Augustine','Bermudagrass','Bahiagrass','Buffalo Grass'], detail: 'Your warm, humid or arid climate calls for heat-hardy grasses. St. Augustine and Bermuda are most popular. Bahiagrass is extremely drought-tolerant for sandy soils. Buffalo Grass is ideal for low-water xeriscape lawns in drier climates.' },
+  arid: { tags: ['Buffalo Grass','Blue Grama','Zoysia (with irrigation)','Bermudagrass'], detail: 'For your dry climate, native grasses like Buffalo Grass and Blue Grama require minimal irrigation once established. If you have a full irrigation system, Bermudagrass and Zoysia are lush options. Consider xeriscaping with native groundcovers to reduce water use.' },
+};
+
+function getGrassType(region, zone) {
+  if (['Pacific Northwest','Northeast','Midwest'].includes(region)) return 'cold';
+  if (['Mid-Atlantic'].includes(region)) return 'transition';
+  if (['Southeast','South'].includes(region)) return 'warm';
+  if (zone && (zone.startsWith('10') || zone.startsWith('9'))) return 'hot';
+  if (['Southwest','Mountain'].includes(region)) return 'arid';
+  if (['Pacific'].includes(region)) return 'transition';
+  return 'transition';
+}
+
+// ── Wildlife data ─────────────────────────────────────────────────────────────
+const WILDLIFE_OPTIONS = ['🦋 Butterflies','🐝 Bees','🐦 Songbirds','🦅 Hummingbirds','🦔 Beneficial Insects','🐸 Amphibians'];
+
+const WILDLIFE_PLANTS = {
+  '🦋 Butterflies': 'Milkweed (host for Monarchs), coneflowers (Echinacea), native asters, black-eyed susans, and butterfly bush. Butterflies need nectar sources AND host plants — plant both! Avoid pesticides and leave some bare soil for ground-nesting species.',
+  '🐝 Bees': 'Lavender, borage, phacelia, native clovers, lemon balm, and goldenrod. Plant in clusters of the same species so bees can forage efficiently. Bees prefer single-petal flowers over double-petaled ornamentals. Leave some leaf litter and bare patches for ground-nesting native bees.',
+  '🐦 Songbirds': 'Plant fruiting shrubs like serviceberry, holly, and native viburnums. Seed-producing natives like coneflowers and black-eyed susans provide fall/winter food. Provide fresh water in a birdbath. Add native trees like dogwood or oak for nesting habitat.',
+  '🦅 Hummingbirds': 'Trumpet vine, salvia, bee balm, cardinal flower, and native columbine. Hummingbirds are attracted to tubular red/orange flowers. Plant a succession of blooms for a season-long food source. Hang a feeder near flowering plants to boost visits.',
+  '🦔 Beneficial Insects': 'Dill, fennel, yarrow, native asters, goldenrod, and sweet alyssum. These attract lacewings, parasitic wasps, and predatory beetles that eat pest insects naturally. Maintain leaf litter and avoid tilling to protect overwintering beneficial insects.',
+  '🐸 Amphibians': 'Create a small rain garden or shallow pond. Plant native ferns, mosses, and sedges near moisture-retaining areas. Toads and frogs eat hundreds of insects each night. Avoid synthetic fertilizers and pesticides near wet areas. Leave log piles for shelter.',
+};
+
+// ── App State ──────────────────────────────────────────────────────────────────
+let currentRegion = null;
+let currentZip = null;
+let nwsConnected = false;
+let weatherData = null;
+
+// ── NWS Weather Integration ────────────────────────────────────────────────────
+
+async function connectNWS() {
+  if (nwsConnected) return;
+  const btn = document.getElementById('nwsConnectBtn');
+  btn.textContent = 'Connecting…';
+  btn.disabled = true;
+  try {
+    await fetchNWSData(currentZip);
+    btn.textContent = '✓ Connected';
+    btn.classList.add('connected');
+    nwsConnected = true;
+  } catch(e) {
+    btn.textContent = 'Retry Connection';
+    btn.disabled = false;
+    console.error('NWS error:', e);
+  }
+}
+
+async function fetchNWSData(zip) {
+  // Step 1: get coordinates from zip using NWS points API
+  // We use the region data we already have to get approximate lat/lon
+  const coords = ZIP_COORDS[zip] || ZIP_COORDS[zip.slice(0,3)+'00'] || getRegionCoords(currentRegion.region);
+  const { lat, lon } = coords;
+
+  // Step 2: Get NWS grid point
+  const pointsRes = await fetch(`https://api.weather.gov/points/${lat},${lon}`, {
+    headers: { 'User-Agent': 'GardenWise/1.0 (gardenwise-app)' }
+  });
+  if (!pointsRes.ok) throw new Error('NWS points API failed');
+  const pointsData = await pointsRes.json();
+  const { gridId, gridX, gridY, forecast: forecastUrl, forecastHourly } = pointsData.properties;
+  const observationStations = pointsData.properties.observationStations;
+  const county = pointsData.properties.county;
+  const zone = pointsData.properties.forecastZone;
+
+  // Step 3: Get 7-day forecast
+  const forecastRes = await fetch(forecastUrl, { headers: { 'User-Agent': 'GardenWise/1.0' } });
+  const forecastJson = await forecastRes.ok ? await forecastRes.json() : null;
+  const periods = forecastJson?.properties?.periods || [];
+
+  // Step 4: Get active alerts (including drought)
+  const alertsRes = await fetch(`https://api.weather.gov/alerts/active?zone=${zone.split('/').pop()}`, {
+    headers: { 'User-Agent': 'GardenWise/1.0' }
+  });
+  const alertsJson = await alertsRes.ok ? await alertsRes.json() : null;
+  const alerts = alertsJson?.features || [];
+
+  // Step 5: Try to get recent observations for precipitation
+  let recentPrecip = null;
+  try {
+    const stationsRes = await fetch(observationStations, { headers: { 'User-Agent': 'GardenWise/1.0' } });
+    const stationsJson = await stationsRes.json();
+    const stationId = stationsJson?.features?.[0]?.properties?.stationIdentifier;
+    if (stationId) {
+      const obsRes = await fetch(`https://api.weather.gov/stations/${stationId}/observations/latest`, {
+        headers: { 'User-Agent': 'GardenWise/1.0' }
+      });
+      const obsJson = await obsRes.ok ? await obsRes.json() : null;
+      recentPrecip = obsJson?.properties?.precipitationLastHour?.value;
+    }
+  } catch(e) { /* observations optional */ }
+
+  weatherData = { periods, alerts, lat, lon, recentPrecip, zip };
+  renderWeatherCard();
+}
+
+// Approximate lat/lon by ZIP prefix
+const ZIP_COORDS = {
+  '22554': {lat:38.47, lon:-77.41}, '22': {lat:38.85, lon:-77.34},
+  '20': {lat:38.89, lon:-77.03}, '21': {lat:39.29, lon:-76.61},
+  '27': {lat:35.78, lon:-78.64}, '28': {lat:35.23, lon:-80.84},
+  '30': {lat:33.75, lon:-84.39}, '33': {lat:25.77, lon:-80.19},
+  '10': {lat:40.71, lon:-74.01}, '07': {lat:40.73, lon:-74.17},
+  '19': {lat:39.95, lon:-75.17}, '06': {lat:41.76, lon:-72.68},
+  '60': {lat:41.85, lon:-87.65}, '43': {lat:39.96, lon:-82.99},
+  '75': {lat:32.78, lon:-96.80}, '77': {lat:29.76, lon:-95.37},
+  '85': {lat:33.45, lon:-112.07},'80': {lat:39.74, lon:-104.99},
+  '90': {lat:34.05, lon:-118.24},'94': {lat:37.77, lon:-122.42},
+  '98': {lat:47.61, lon:-122.33},'97': {lat:45.52, lon:-122.68},
+};
+
+function getRegionCoords(region) {
+  const defaults = {
+    'Mid-Atlantic':{lat:38.85,lon:-77.34}, 'Northeast':{lat:41.0,lon:-74.0},
+    'Southeast':{lat:33.75,lon:-84.39}, 'Midwest':{lat:41.85,lon:-87.65},
+    'South':{lat:32.78,lon:-96.80}, 'Mountain':{lat:39.74,lon:-104.99},
+    'Southwest':{lat:33.45,lon:-112.07}, 'Pacific':{lat:34.05,lon:-118.24},
+    'Pacific Northwest':{lat:47.61,lon:-122.33},
+  };
+  return defaults[region] || {lat:38.89,lon:-77.03};
+}
+
+function parsePrecipFromForecast(periods) {
+  // Extract precipitation chance and estimate amounts from 7 forecast periods
+  return periods.slice(0, 14).map(p => {
+    const match = p.detailedForecast?.match(/(\d+)\s*(?:to\s*(\d+))?\s*(?:hundredths?|inches?|")\s*of\s*(?:rain|precipitation)/i);
+    const chanceMatch = p.detailedForecast?.match(/(\d+)\s*percent/i) || p.shortForecast?.match(/(\d+)\s*percent/i);
+    const precipAmount = match ? (parseFloat(match[1]) + (match[2] ? parseFloat(match[2]) : 0)) / (match[2] ? 2 : 1) / 100 : null;
+    const precipChance = p.probabilityOfPrecipitation?.value || (chanceMatch ? parseInt(chanceMatch[1]) : 0);
+    const hasRain = p.shortForecast?.toLowerCase().includes('rain') || p.shortForecast?.toLowerCase().includes('shower') || p.shortForecast?.toLowerCase().includes('storm');
+    return {
+      name: p.name,
+      isDaytime: p.isDaytime,
+      shortForecast: p.shortForecast || '',
+      precipChance,
+      precipAmount: precipAmount || (hasRain ? precipChance * 0.012 : 0),
+      temp: p.temperature,
+      tempUnit: p.temperatureUnit || 'F',
+      icon: getForecastIcon(p.shortForecast || ''),
+    };
+  });
+}
+
+function getForecastIcon(forecast) {
+  const f = forecast.toLowerCase();
+  if (f.includes('thunderstorm') || f.includes('storm')) return '⛈️';
+  if (f.includes('snow')) return '❄️';
+  if (f.includes('shower') || f.includes('rain')) return '🌧️';
+  if (f.includes('drizzle') || f.includes('sprinkle')) return '🌦️';
+  if (f.includes('cloudy') || f.includes('overcast')) return '☁️';
+  if (f.includes('partly')) return '⛅';
+  if (f.includes('sunny') || f.includes('clear')) return '☀️';
+  if (f.includes('fog') || f.includes('mist')) return '🌫️';
+  if (f.includes('wind')) return '💨';
+  return '🌤️';
+}
+
+function calcWateringRec(parsedForecast, alerts, recentPrecip) {
+  const droughtAlert = alerts.find(a => {
+    const ev = (a.properties?.event || '').toLowerCase();
+    return ev.includes('drought') || ev.includes('water shortage') || ev.includes('water conservation');
+  });
+  if (droughtAlert) return {
+    type:'drought',
+    icon:'🚫',
+    title:'Drought/Water Conservation Warning',
+    msg:`A ${droughtAlert.properties.event} is in effect. Outdoor watering may be restricted or banned in your area. Check with your local water authority for current restrictions before irrigating.`
+  };
+
+  const next3Days = parsedForecast.filter(p=>p.isDaytime).slice(0,3);
+  const totalPrecip = next3Days.reduce((s,p) => s + (p.precipAmount||0), 0);
+  const avgChance = next3Days.reduce((s,p) => s + p.precipChance, 0) / Math.max(next3Days.length,1);
+  const lastHour = recentPrecip ?? 0;
+
+  if (totalPrecip > 0.5 || avgChance > 70 || lastHour > 0.1) return {
+    type:'no-water',
+    icon:'✅',
+    title:'No Watering Needed',
+    msg:`Sufficient rainfall is expected or occurring in your area (${totalPrecip > 0 ? totalPrecip.toFixed(2)+'"' : Math.round(avgChance)+'% chance'} over the next 3 days). Save water and skip irrigation — let nature do the work!`
+  };
+  if (totalPrecip > 0.2 || avgChance > 40) return {
+    type:'water-soon',
+    icon:'⚠️',
+    title:'Light Rain Expected — Monitor Your Yard',
+    msg:`Some precipitation is possible (${Math.round(avgChance)}% chance). You may be able to skip watering, but monitor soil moisture. Water if the top inch of soil feels dry.`
+  };
+  return {
+    type:'water-now',
+    icon:'💧',
+    title:'Watering Recommended',
+    msg:`No significant rain is expected in the next 3 days. Water deeply in the early morning (before 10 AM) to minimize evaporation. Most lawns need about 1 inch of water per week.`
+  };
+}
+
+function renderWeatherCard() {
+  const { periods, alerts, recentPrecip } = weatherData;
+  const parsed = parsePrecipFromForecast(periods);
+  const waterRec = calcWateringRec(parsed, alerts, recentPrecip);
+
+  // Rainfall bar data — use forecast days
+  const dayPeriods = parsed.filter(p => p.isDaytime).slice(0, 7);
+  const annualIn = parseFloat(currentRegion.rainfall) || 40;
+  const monthlyAvg = annualIn / 12;
+  const weeklyAvg = annualIn / 52;
+  const forecastWeekTotal = dayPeriods.reduce((s,p) => s + p.precipAmount, 0);
+
+  // Build alerts HTML
+  const alertTypes = { 'DROUGHT': 'drought', 'WATER': 'drought', 'FLOOD': 'watch', 'TORNADO': 'watch', 'WARNING': 'warning', 'WATCH': 'watch', 'ADVISORY': 'advisory' };
+  const alertsHtml = alerts.length === 0
+    ? `<div class="nws-alert info"><span class="nws-alert-icon">✅</span><div><strong>No Active Alerts</strong>No watches, warnings, or drought notices for your area.</div></div>`
+    : alerts.slice(0,4).map(a => {
+        const ev = (a.properties?.event || 'Alert').toUpperCase();
+        let cls = 'advisory';
+        Object.keys(alertTypes).forEach(k => { if (ev.includes(k)) cls = alertTypes[k]; });
+        const icon = cls==='drought'?'🚱':cls==='watch'?'🚨':cls==='warning'?'⚠️':'ℹ️';
+        const expires = a.properties?.expires ? new Date(a.properties.expires).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric'}) : '';
+        return `<div class="nws-alert ${cls}"><span class="nws-alert-icon">${icon}</span><div><strong>${a.properties?.event || 'Alert'}</strong>${a.properties?.headline || ''} ${expires ? '· Expires '+expires : ''}</div></div>`;
+      }).join('');
+
+  // 7-day forecast strip
+  const forecastHtml = dayPeriods.map(p => `
+    <div class="forecast-day">
+      <div class="fd-day">${p.name?.split(' ')[0] || ''}</div>
+      <div class="fd-icon">${p.icon}</div>
+      <div class="fd-rain">${p.precipChance > 0 ? p.precipChance+'%' : '—'}</div>
+      <div class="fd-temp">${p.temp}°${p.tempUnit}</div>
+    </div>`).join('');
+
+  // Rain gauge SVG — animated fill
+  const gaugePercent = Math.min(forecastWeekTotal / Math.max(weeklyAvg * 2, 0.5), 1);
+  const gaugeFill = Math.round(gaugePercent * 100);
+  const gaugeColor = gaugeFill > 60 ? '#3b82f6' : gaugeFill > 30 ? '#60a5fa' : '#93c5fd';
+
+  // Monthly bar chart — use regional monthly averages + forecast
+  const MONTHLY_DIST = [0.07,0.07,0.08,0.09,0.10,0.09,0.09,0.08,0.08,0.08,0.08,0.09];
+  const months = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const now = new Date();
+  const curMonth = now.getMonth();
+  const monthBars = months.map((m,i) => {
+    const expected = annualIn * MONTHLY_DIST[i];
+    const isCurrent = i === curMonth;
+    const pct = Math.min(expected / (annualIn * 0.12) * 100, 100);
+    return { m, expected: expected.toFixed(1), pct, isCurrent };
+  });
+
+  const maxBar = Math.max(...monthBars.map(b => parseFloat(b.expected)));
+  const avgLineH = (annualIn/12) / maxBar * 100;
+
+  const content = `
+    <!-- Watering recommendation -->
+    <div class="water-rec ${waterRec.type}">
+      <div class="water-rec-icon">${waterRec.icon}</div>
+      <div class="water-rec-body">
+        <strong>${waterRec.title}</strong>
+        <p>${waterRec.msg}</p>
+      </div>
+    </div>
+
+    <!-- Active NWS Alerts -->
+    <div style="font-size:0.78rem; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color:var(--bark); margin-bottom:0.5rem;">📡 NWS Active Alerts</div>
+    <div class="nws-alerts">${alertsHtml}</div>
+
+    <!-- Rain gauge + charts -->
+    <div style="font-size:0.78rem; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color:var(--bark); margin-bottom:0.75rem; margin-top:0.25rem;">🌧️ Rainfall Estimator</div>
+    <div class="rain-gauge-wrap">
+
+      <!-- Animated rain gauge SVG -->
+      <div>
+        <svg class="rain-gauge-svg" viewBox="0 0 90 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- Gauge body -->
+          <rect x="20" y="20" width="50" height="155" rx="8" fill="#e0f2fe" stroke="#3b82f6" stroke-width="2"/>
+          <!-- Tick marks -->
+          ${[0,25,50,75,100].map(p => {
+            const y = 20 + (1 - p/100) * 155;
+            return `<line x1="20" y1="${y}" x2="30" y2="${y}" stroke="#3b82f6" stroke-width="1.5"/>
+                    <text x="15" y="${y+4}" text-anchor="end" font-size="9" fill="#6b7280" font-family="sans-serif">${Math.round(p/100*weeklyAvg*2*10)/10}"</text>`;
+          }).join('')}
+          <!-- Animated water fill -->
+          <clipPath id="gaugeClip"><rect x="21" y="21" width="48" height="153" rx="6"/></clipPath>
+          <g clip-path="url(#gaugeClip)">
+            <rect id="gaugeFillRect" x="21" y="${21 + 153 * (1 - gaugePercent)}" width="48" height="${153 * gaugePercent}" fill="${gaugeColor}" opacity="0.85"/>
+            <!-- Ripple wave -->
+            <ellipse cx="45" cy="${21 + 153 * (1 - gaugePercent)}" rx="24" ry="4" fill="${gaugeColor}" opacity="0.6">
+              <animate attributeName="cx" values="45;50;45;40;45" dur="3s" repeatCount="indefinite"/>
+            </ellipse>
+          </g>
+          <!-- Labels -->
+          <text x="45" y="14" text-anchor="middle" font-size="9" fill="#1e40af" font-family="sans-serif" font-weight="600">THIS WEEK</text>
+          <text x="45" y="190" text-anchor="middle" font-size="10" fill="#1e40af" font-family="sans-serif" font-weight="700">${forecastWeekTotal.toFixed(2)}"</text>
+          <text x="45" y="200" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif">of ${weeklyAvg.toFixed(1)}" avg</text>
+        </svg>
+      </div>
+
+      <!-- Tabs + bar chart -->
+      <div>
+        <div class="rain-tabs">
+          <button class="rain-tab active" onclick="switchRainTab('monthly',this)">Monthly</button>
+          <button class="rain-tab" onclick="switchRainTab('weekly',this)">7-Day Forecast</button>
+          <button class="rain-tab" onclick="switchRainTab('annual',this)">Annual</button>
+        </div>
+
+        <!-- Monthly bars -->
+        <div id="tab-monthly">
+          <div class="rain-bars" style="position:relative;">
+            <div class="rain-avg-line" style="bottom:${avgLineH}%;"></div>
+            ${monthBars.map(b => {
+              const barH = Math.round(parseFloat(b.expected) / maxBar * 100);
+              const cls = b.isCurrent ? 'today' : '';
+              return `<div class="rain-bar-col">
+                <div class="rain-bar ${cls}" style="height:${barH}%" title="${b.expected}&quot;"></div>
+                <div class="rain-bar-label">${b.m}</div>
+              </div>`;
+            }).join('')}
+          </div>
+          <div style="font-size:0.72rem; color:var(--bark); margin-top:0.25rem;">Avg monthly rainfall · Dashed = annual average · <span style="color:#10b981;">■</span> = current month</div>
+        </div>
+
+        <!-- Weekly forecast bars -->
+        <div id="tab-weekly" style="display:none;">
+          <div class="rain-bars">
+            ${dayPeriods.map(p => {
+              const barH = Math.min(Math.round(p.precipChance), 100);
+              const cls = p.precipChance > 60 ? '' : p.precipChance > 30 ? 'future' : 'future';
+              return `<div class="rain-bar-col">
+                <div class="rain-bar ${cls}" style="height:${Math.max(barH,2)}%" title="${p.precipChance}% chance"></div>
+                <div class="rain-bar-label">${p.name?.split(' ')[0]?.slice(0,3) || ''}</div>
+              </div>`;
+            }).join('')}
+          </div>
+          <div style="font-size:0.72rem; color:var(--bark); margin-top:0.25rem;">Precipitation probability % · Next 7 days from NWS</div>
+        </div>
+
+        <!-- Annual summary -->
+        <div id="tab-annual" style="display:none; padding-top:0.5rem;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div class="climate-stat"><div class="icon">📅</div><div class="label">Annual Average</div><div class="value">${currentRegion.rainfall}</div></div>
+            <div class="climate-stat"><div class="icon">📆</div><div class="label">Monthly Average</div><div class="value">${monthlyAvg.toFixed(1)}"</div></div>
+            <div class="climate-stat"><div class="icon">📊</div><div class="label">Weekly Average</div><div class="value">${weeklyAvg.toFixed(2)}"</div></div>
+            <div class="climate-stat"><div class="icon">🌧️</div><div class="label">Forecast This Week</div><div class="value">${forecastWeekTotal.toFixed(2)}"</div></div>
+          </div>
+          <div style="margin-top:1rem; font-size:0.82rem; color:var(--bark); line-height:1.6;">
+            Average based on NOAA historical climate data for your region. Most lawns need 1" of water per week — rain + irrigation combined. Vegetable gardens often need 1–1.5" per week.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7-day forecast strip -->
+    <div style="font-size:0.78rem; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color:var(--bark); margin-bottom:0.5rem;">📅 7-Day Forecast</div>
+    <div class="forecast-row">${forecastHtml}</div>
+
+    <!-- Planting window recommendation -->
+    <div style="margin-top:1.25rem; background:var(--cream); border-radius:12px; padding:1rem 1.25rem; font-size:0.85rem; line-height:1.7; color:var(--soil);">
+      <strong>🌱 Planting Window Tip:</strong> ${getPlantingTip(waterRec.type, dayPeriods)}
+    </div>
+
+    <div class="nws-source-link">Data sourced from the <a href="https://www.weather.gov" target="_blank">National Weather Service (weather.gov)</a> · Updated at page load · <a href="#" onclick="refreshWeather()">Refresh</a></div>
+  `;
+
+  document.getElementById('weatherContent').innerHTML = content;
+  showCard('weatherCard');
+}
+
+function getPlantingTip(waterType, forecast) {
+  const rainDays = forecast.filter(p => p.precipChance > 50).length;
+  if (waterType === 'drought') return 'Drought conditions are not ideal for new plantings. If you must plant, choose drought-tolerant natives and water immediately after installation. Follow all local water use restrictions.';
+  if (waterType === 'no-water' && rainDays >= 2) return `Rain is expected ${rainDays} days this week — an excellent window for new plantings! Plant now and let natural rainfall establish your plants with minimal supplemental watering needed.`;
+  if (waterType === 'water-soon') return 'Light rain is possible. Good time to plant if you can water immediately after. Newly planted items need consistent moisture for the first 2–3 weeks.';
+  return 'Dry weather ahead — water new plantings deeply right after installation. Water established lawns in the early morning to reduce evaporation. Avoid watering during the heat of the day.';
+}
+
+function switchRainTab(tab, btn) {
+  ['monthly','weekly','annual'].forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.rain-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function refreshWeather() {
+  if (currentZip) fetchNWSData(currentZip).catch(console.error);
+}
+
+function getRegionByZip(zip) {
+  const prefix2 = zip.slice(0, 2);
+  const prefix1 = zip[0];
+  return REGION_DATA[prefix2] || REGION_DATA[prefix1 + '0'] || null;
+}
+
+function loadLocation() {
+  const zip = document.getElementById('zipInput').value.trim();
+  if (!/^\d{5}$/.test(zip)) {
+    alert('Please enter a valid 5-digit ZIP code.');
+    return;
+  }
+
+  const region = getRegionByZip(zip);
+  if (!region) {
+    alert('ZIP code region not found. Please try a different ZIP code.');
+    return;
+  }
+
+  currentRegion = region;
+  currentZip = zip;
+  document.getElementById('emptyState').style.display = 'none';
+
+  // Show NWS connect bar
+  document.getElementById('weatherConnectBar').classList.add('visible');
+
+  // Populate climate card
+  document.getElementById('climateGrid').innerHTML = `
+    <div class="climate-stat"><div class="icon">🌡️</div><div class="label">Avg Temp</div><div class="value">${region.avgTemp}</div></div>
+    <div class="climate-stat"><div class="icon">🌧️</div><div class="label">Annual Rain</div><div class="value">${region.rainfall}</div></div>
+    <div class="climate-stat"><div class="icon">☀️</div><div class="label">Sunlight</div><div class="value">${region.sunlight}</div></div>
+    <div class="climate-stat"><div class="icon">🌱</div><div class="label">Soil Type</div><div class="value">${region.soil}</div></div>
+    <div class="climate-stat"><div class="icon">❄️</div><div class="label">Frost-Free</div><div class="value">${region.frostFree}</div></div>
+  `;
+  document.getElementById('zoneText').innerHTML = `<strong>USDA Hardiness Zone ${region.zone}</strong> — ${region.city}, ${region.state}. This zone determines which perennial plants will survive your winters.`;
+  showCard('climateCard');
+
+  // Populate seasonal calendar
+  const seasons = SEASON_DATA[region.region] || SEASON_DATA['Mid-Atlantic'];
+  document.getElementById('seasonGrid').innerHTML = `
+    <div class="season-card spring">
+      <div class="season-icon">🌸</div>
+      <h4>Spring</h4>
+      <ul>${seasons.spring.map(x => `<li>${x}</li>`).join('')}</ul>
+    </div>
+    <div class="season-card summer">
+      <div class="season-icon">☀️</div>
+      <h4>Summer</h4>
+      <ul>${seasons.summer.map(x => `<li>${x}</li>`).join('')}</ul>
+    </div>
+    <div class="season-card fall">
+      <div class="season-icon">🍂</div>
+      <h4>Fall</h4>
+      <ul>${seasons.fall.map(x => `<li>${x}</li>`).join('')}</ul>
+    </div>
+    <div class="season-card winter">
+      <div class="season-icon">❄️</div>
+      <h4>Winter</h4>
+      <ul>${seasons.winter.map(x => `<li>${x}</li>`).join('')}</ul>
+    </div>
+  `;
+  showCard('calendarCard');
+
+  // Grass recommendations
+  const grassType = getGrassType(region.region, region.zone);
+  const grass = GRASS_DATA[grassType];
+  document.getElementById('grassTags').innerHTML = grass.tags.map(g => `<span class="tag green">🌾 ${g}</span>`).join('');
+  document.getElementById('grassDetails').textContent = grass.detail;
+  showCard('grassCard');
+
+  // Wildlife buttons
+  document.getElementById('wildlifeButtons').innerHTML = WILDLIFE_OPTIONS.map(w =>
+    `<button class="wildlife-btn" onclick="selectWildlife(this, '${w}')">${w}</button>`
+  ).join('');
+  showCard('wildlifeCard');
+
+  // AI card
+  showCard('aiCard');
+
+  // Show yard builder
+  showYardBuilder();
+
+  // Populate Pro features (data ready; unlock state governs visibility)
+  populateProFeatures();
+}
+
+function showCard(id) {
+  const card = document.getElementById(id);
+  card.classList.add('visible');
+}
+
+function selectWildlife(btn, wildlife) {
+  document.querySelectorAll('.wildlife-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const plants = WILDLIFE_PLANTS[wildlife];
+  const icon = wildlife.split(' ')[0];
+  document.getElementById('wildlifeRecs').innerHTML =
+    `<strong>${icon} To attract ${wildlife.replace(/^[^\s]+\s/, '')}:</strong>\n\n${plants}`;
+}
+
+// ── Species Identifier ────────────────────────────────────────────────────────
+let currentImageBase64 = null;
+let currentImageType = 'image/jpeg';
+
+function handleDrag(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  document.getElementById('uploadZone').classList.remove('drag-over');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) processFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  currentImageType = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const dataUrl = ev.target.result;
+    currentImageBase64 = dataUrl.split(',')[1];
+    document.getElementById('previewImg').src = dataUrl;
+    document.getElementById('previewWrap').style.display = 'block';
+    document.getElementById('identifyBtn').style.display = 'block';
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('idResult').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetUpload() {
+  currentImageBase64 = null;
+  document.getElementById('photoInput').value = '';
+  document.getElementById('previewWrap').style.display = 'none';
+  document.getElementById('identifyBtn').style.display = 'none';
+  document.getElementById('uploadZone').style.display = 'block';
+  document.getElementById('idResult').style.display = 'none';
+  document.getElementById('removalSection').style.display = 'none';
+  document.getElementById('beneficialSection').style.display = 'none';
+}
+
+async function identifySpecies() {
+  if (!currentImageBase64) return;
+
+  const btn = document.getElementById('identifyBtn');
+  btn.innerHTML = '<span class="spinner"></span> Analyzing photo…';
+  btn.disabled = true;
+
+  const locationCtx = currentRegion
+    ? `The user is located in ${currentRegion.city}, ${currentRegion.state} (USDA Zone ${currentRegion.zone}).`
+    : 'The user location is unknown.';
+
+  const systemPrompt = `You are GardenWise Species Expert, an expert botanist, entomologist, and mycologist. Identify species from photos and provide detailed, actionable information. ${locationCtx}
+
+Respond ONLY with a valid JSON object (no markdown, no backticks) with this exact structure:
+{
+  "commonName": "Common name of species",
+  "scientificName": "Scientific name (italic)",
+  "category": "plant|weed|tree|shrub|insect|fungus|flower|grass|vine",
+  "emoji": "single relevant emoji",
+  "invasiveStatus": "invasive|potentially_invasive|native|naturalized|unknown",
+  "invasiveDetail": "Brief explanation of invasive status and states/regions affected, or empty string if native",
+  "about": "2-3 paragraph description: what it is, how to identify it, where it typically grows, its life cycle",
+  "isHarmful": true or false,
+  "removalMechanical": "Detailed mechanical/manual removal methods if invasive or unwanted. Include timing, tools, repeat treatment. Empty string if not applicable.",
+  "removalChemical": "Comprehensive list of currently EPA-registered herbicides/pesticides legal for homeowner use in the US. For each product include: active ingredient, brand names (e.g. Roundup, Ortho, Spectracide), application method, timing, and safety notes. Be thorough — list ALL relevant chemical options. Empty string if not applicable.",
+  "removalBiological": "Any biological control options (cover cropping, natural predators, smothering, solarization, etc.) Empty string if not applicable.",
+  "beneficialInfo": "If native or beneficial: describe ecological value, wildlife benefits, or reasons to keep it. Empty string if invasive.",
+  "confidence": "high|medium|low"
+}`;
+
+  try {
+    const data = await callClaude({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      system: systemPrompt,
+      messages: [{
+        role: 'user',
+        content: [{
+          type: 'image',
+          source: { type: 'base64', media_type: currentImageType, data: currentImageBase64 }
+        }, {
+          type: 'text',
+          text: 'Please identify the species in this photo and provide the full JSON response.'
+        }]
+      }]
+    }, '/api/identify');
+
+    const raw = data.content?.map(b => b.text || '').join('') || '';
+    let species;
+    try {
+      species = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    } catch {
+      throw new Error('Could not parse AI response.');
+    }
+
+    renderSpeciesResult(species);
+  } catch (err) {
+    document.getElementById('resultCommonName').textContent = '⚠️ Identification failed';
+    document.getElementById('resultSciName').textContent = 'Please try a clearer photo.';
+    document.getElementById('resultAbout').textContent = err.message || 'An error occurred.';
+    document.getElementById('idResult').style.display = 'block';
+  } finally {
+    btn.innerHTML = '🔍 Identify This Species';
+    btn.disabled = false;
+  }
+}
+
+function renderSpeciesResult(s) {
+  document.getElementById('resultIcon').textContent = s.emoji || '🌿';
+  document.getElementById('resultCommonName').textContent = s.commonName || 'Unknown Species';
+  document.getElementById('resultSciName').textContent = s.scientificName || '';
+  document.getElementById('resultAbout').textContent = s.about || '';
+
+  // Invasive banner
+  const banner = document.getElementById('invasiveBanner');
+  if (s.invasiveStatus === 'invasive') {
+    banner.innerHTML = `
+      <div class="invasive-banner confirmed">
+        <span class="banner-icon">🚨</span>
+        <div class="banner-text">
+          <strong>INVASIVE SPECIES CONFIRMED</strong>
+          <p>${s.invasiveDetail}</p>
+        </div>
+      </div>`;
+  } else if (s.invasiveStatus === 'potentially_invasive') {
+    banner.innerHTML = `
+      <div class="invasive-banner">
+        <span class="banner-icon">⚠️</span>
+        <div class="banner-text">
+          <strong>Potentially Invasive / Monitor Closely</strong>
+          <p>${s.invasiveDetail}</p>
+        </div>
+      </div>`;
+  } else if (s.invasiveStatus === 'native') {
+    banner.innerHTML = `
+      <div class="invasive-banner native">
+        <span class="banner-icon">✅</span>
+        <div class="banner-text">
+          <strong>Native Species</strong>
+          <p>${s.invasiveDetail || 'This species is native to North America and supports local ecosystems.'}</p>
+        </div>
+      </div>`;
+  } else {
+    banner.innerHTML = `
+      <div class="invasive-banner">
+        <span class="banner-icon">ℹ️</span>
+        <div class="banner-text">
+          <strong>${s.invasiveStatus === 'naturalized' ? 'Naturalized (Non-native but established)' : 'Status Unknown'}</strong>
+          <p>${s.invasiveDetail || ''}</p>
+        </div>
+      </div>`;
+  }
+
+  // Removal section
+  const removalSection = document.getElementById('removalSection');
+  if (s.isHarmful && (s.removalMechanical || s.removalChemical || s.removalBiological)) {
+    const methods = [];
+    if (s.removalMechanical) methods.push(`<div class="removal-card mechanical"><h5>🛠️ Mechanical / Manual</h5>${s.removalMechanical}</div>`);
+    if (s.removalChemical) methods.push(`<div class="removal-card chemical"><h5>🧪 Chemical / Herbicides</h5>${s.removalChemical}</div>`);
+    if (s.removalBiological) methods.push(`<div class="removal-card biological"><h5>🌱 Biological / Cultural</h5>${s.removalBiological}</div>`);
+    document.getElementById('removalMethods').innerHTML = methods.join('');
+    removalSection.style.display = 'block';
+  } else {
+    removalSection.style.display = 'none';
+  }
+
+  // Beneficial section
+  const benSection = document.getElementById('beneficialSection');
+  if (s.beneficialInfo) {
+    document.getElementById('beneficialText').textContent = s.beneficialInfo;
+    benSection.style.display = 'block';
+  } else {
+    benSection.style.display = 'none';
+  }
+
+  document.getElementById('idResult').style.display = 'block';
+  document.getElementById('idResult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Tier & Monetization System ────────────────────────────────────────────────
+
+// Tier: 'free' | 'plus' | 'pro'
+// In production this would verify a receipt with the App Store / Google Play.
+// Here we persist in localStorage to simulate purchase state across sessions.
+
+const TIERS = { free: 0, plus: 1, pro: 2 };
+
+function getTier() {
+  return localStorage.getItem('gw_tier') || 'free';
+}
+function setTier(t) {
+  localStorage.setItem('gw_tier', t);
+  applyTier();
+}
+function hasTier(required) {
+  return TIERS[getTier()] >= TIERS[required];
+}
+
+// AI usage tracking (resets daily)
+function getAiUsage() {
+  const today = new Date().toDateString();
+  const stored = JSON.parse(localStorage.getItem('gw_ai_usage') || '{}');
+  if (stored.date !== today) return 0;
+  return stored.count || 0;
+}
+function incrementAiUsage() {
+  const today = new Date().toDateString();
+  const count = getAiUsage() + 1;
+  localStorage.setItem('gw_ai_usage', JSON.stringify({ date: today, count }));
+}
+
+// Species ID usage tracking (resets monthly)
+function getIdUsage() {
+  const month = new Date().toISOString().slice(0, 7);
+  const stored = JSON.parse(localStorage.getItem('gw_id_usage') || '{}');
+  if (stored.month !== month) return 0;
+  return stored.count || 0;
+}
+function incrementIdUsage() {
+  const month = new Date().toISOString().slice(0, 7);
+  const count = getIdUsage() + 1;
+  localStorage.setItem('gw_id_usage', JSON.stringify({ month, count }));
+}
+
+// Apply tier UI state
+function applyTier() {
+  const tier = getTier();
+  const badge = document.getElementById('tierBadge');
+  if (tier === 'pro') {
+    badge.textContent = '⭐ Pro';
+    badge.className = 'tier-pill pro';
+  } else if (tier === 'plus') {
+    badge.textContent = '✨ Plus';
+    badge.className = 'tier-pill plus';
+  } else {
+    badge.textContent = '🌱 Free';
+    badge.className = 'tier-pill free';
+  }
+
+  // Unlock or lock Pro cards
+  const proCards = ['soilCard','taskCard','chemCard','nativeCard','exportCard'];
+  proCards.forEach(id => {
+    const card = document.getElementById(id);
+    if (card) card.style.display = hasTier('plus') ? 'block' : 'none';
+  });
+
+  // Unlock veils for Pro content
+  if (hasTier('pro')) {
+    document.querySelectorAll('.lock-veil').forEach(v => v.style.display = 'none');
+    const eb = document.getElementById('exportBtns');
+    const ec = document.getElementById('exportContent');
+    if (eb) { eb.style.display = 'flex'; }
+    if (ec) ec.style.display = 'none';
+  }
+
+  // Update usage meters in paywall
+  updateUsageMeters();
+}
+
+function updateUsageMeters() {
+  const tier = getTier();
+  const meter = document.getElementById('pwUsageMeter');
+  if (meter && tier === 'free') {
+    meter.style.display = 'block';
+    const aiCount = getAiUsage();
+    const idCount = getIdUsage();
+    const aiPct = Math.min(aiCount / 5 * 100, 100);
+    const idPct = Math.min(idCount / 3 * 100, 100);
+    document.getElementById('aiUsageLabel').textContent = `${aiCount} / 5`;
+    document.getElementById('idUsageLabel').textContent = `${idCount} / 3`;
+    const aiFill = document.getElementById('aiUsageFill');
+    const idFill = document.getElementById('idUsageFill');
+    aiFill.style.width = aiPct + '%';
+    aiFill.className = 'usage-bar-fill' + (aiPct >= 100 ? ' full' : aiPct >= 60 ? ' warn' : '');
+    idFill.style.width = idPct + '%';
+    idFill.className = 'usage-bar-fill' + (idPct >= 100 ? ' full' : idPct >= 66 ? ' warn' : '');
+  }
+}
+
+// Paywall modal
+let selectedPaywallTier = 'plus';
+function openPaywall() {
+  document.getElementById('pwOverlay').classList.add('open');
+  updateUsageMeters();
+}
+function closePaywall() {
+  document.getElementById('pwOverlay').classList.remove('open');
+}
+function closePwIfBackground(e) {
+  if (e.target === document.getElementById('pwOverlay')) closePaywall();
+}
+function selectTier(t) {
+  selectedPaywallTier = t;
+  ['free','plus','pro'].forEach(tier => {
+    document.getElementById('pw-'+tier).classList.toggle('selected', tier === t);
+  });
+  const btn = document.getElementById('pwUnlockBtn');
+  if (t === 'free') {
+    btn.textContent = 'Continue with Free';
+    btn.style.background = 'var(--bark)';
+  } else if (t === 'plus') {
+    btn.textContent = '🔓 Unlock GardenWise+ — $4.99';
+    btn.style.background = 'var(--moss)';
+  } else {
+    btn.textContent = '⭐ Unlock GardenWise Pro — $9.99';
+    btn.style.background = '#065f46';
+  }
+}
+
+function purchaseTier() {
+  if (selectedPaywallTier === 'free') { closePaywall(); return; }
+  // In production: trigger StoreKit (iOS) or Google Play Billing here.
+  // For demo/web we simulate the purchase immediately.
+  const price = selectedPaywallTier === 'plus' ? '$4.99' : '$9.99';
+  const name = selectedPaywallTier === 'plus' ? 'GardenWise+' : 'GardenWise Pro';
+  if (confirm(`Demo mode: Simulate purchasing ${name} for ${price}?\n\nIn the live app, this opens the App Store / Google Play payment sheet.`)) {
+    setTier(selectedPaywallTier);
+    closePaywall();
+    if (currentRegion) populateProFeatures();
+    alert(`✅ ${name} unlocked! Thank you for supporting GardenWise.`);
+  }
+}
+
+// ── Pro Feature Data ───────────────────────────────────────────────────────────
+
+const SOIL_DATA = {
+  'Mid-Atlantic': [
+    { amend:'Lime (dolomitic)', purpose:'Raise pH in acidic clay soils', rate:'50 lb / 1,000 sq ft', timing:'Fall or early spring' },
+    { amend:'Compost', purpose:'Improve clay structure, add organics', rate:'2–3" layer, tilled in', timing:'Any season' },
+    { amend:'Gypsum', purpose:'Break up heavy clay without altering pH', rate:'40 lb / 1,000 sq ft', timing:'Spring or fall' },
+    { amend:'Sulfur', purpose:'Lower pH for acid-loving plants', rate:'5–10 lb / 100 sq ft', timing:'6 months before planting' },
+    { amend:'Balanced fertilizer (10-10-10)', purpose:'General nutrient boost', rate:'Per label', timing:'Spring, before growth' },
+  ],
+  'Southeast': [
+    { amend:'Lime', purpose:'Correct acidic sandy/clay soils', rate:'50 lb / 1,000 sq ft', timing:'Fall' },
+    { amend:'Compost', purpose:'Improve water retention in sandy soils', rate:'3" layer tilled in', timing:'Before planting' },
+    { amend:'Slow-release nitrogen', purpose:'Feed warm-season grasses', rate:'Per label', timing:'April–August' },
+    { amend:'Sulfur', purpose:'Acidify for azaleas, blueberries', rate:'5 lb / 100 sq ft', timing:'Spring' },
+  ],
+  'Northeast': [
+    { amend:'Compost', purpose:'Improve loamy/rocky soil structure', rate:'2–3" layer', timing:'Fall or spring' },
+    { amend:'Lime', purpose:'Raise pH in acidic soils', rate:'50 lb / 1,000 sq ft', timing:'Fall' },
+    { amend:'Peat moss', purpose:'Acidify for blueberries, azaleas', rate:'3–4" layer', timing:'Before planting' },
+    { amend:'Balanced fertilizer', purpose:'Pre-season nutrient boost', rate:'Per label', timing:'Early spring' },
+  ],
+  'Midwest': [
+    { amend:'Compost', purpose:'Loosen compacted clay', rate:'3–4" layer tilled 6"', timing:'Fall' },
+    { amend:'Gypsum', purpose:'Improve clay drainage', rate:'40 lb / 1,000 sq ft', timing:'Spring or fall' },
+    { amend:'Lime', purpose:'Raise pH in acidic patches', rate:'Per soil test result', timing:'Fall' },
+    { amend:'Potassium (0-0-60)', purpose:'Cold hardiness for perennials', rate:'Per label', timing:'September' },
+  ],
+  'default': [
+    { amend:'Compost', purpose:'Improve soil structure and nutrients', rate:'2–3" layer tilled in', timing:'Any season' },
+    { amend:'Balanced fertilizer (10-10-10)', purpose:'General nutrient boost', rate:'Per label', timing:'Spring' },
+    { amend:'Lime or Sulfur', purpose:'pH correction — test soil first', rate:'Per soil test', timing:'Fall' },
+  ],
+};
+
+const TASK_DATA = {
+  'Mid-Atlantic': [
+    { season:'spring', text:'Aerate lawn if compacted — best in March–April for cool-season grasses' },
+    { season:'spring', text:'Apply pre-emergent crabgrass preventer when soil reaches 55°F (forsythia blooming)' },
+    { season:'spring', text:'Divide and transplant overcrowded perennials' },
+    { season:'spring', text:'Fertilize lawn with slow-release nitrogen' },
+    { season:'summer', text:'Mow high (3.5–4") during heat stress — never remove more than 1/3 of blade' },
+    { season:'summer', text:'Deep water lawn 1" per week in early morning' },
+    { season:'summer', text:'Deadhead spent flowers to extend bloom period' },
+    { season:'summer', text:'Scout for Japanese beetles and treat if needed' },
+    { season:'fall',   text:'Overseed bare spots with tall fescue or bluegrass in September' },
+    { season:'fall',   text:'Apply fall fertilizer (high phosphorus) for root development' },
+    { season:'fall',   text:'Plant spring bulbs (tulips, daffodils) before ground freezes' },
+    { season:'fall',   text:'Mulch garden beds 2–3" for winter insulation' },
+    { season:'winter', text:'Prune dormant trees and shrubs (January–February)' },
+    { season:'winter', text:'Order seed catalogs and plan spring garden' },
+    { season:'winter', text:'Test and sharpen mower blades' },
+    { season:'winter', text:'Apply dormant oil spray to fruit trees for pest control' },
+  ],
+  'default': [
+    { season:'spring', text:'Aerate and dethatch lawn' },
+    { season:'spring', text:'Apply pre-emergent weed preventer' },
+    { season:'spring', text:'Fertilize lawn and garden beds' },
+    { season:'summer', text:'Water deeply 1" per week' },
+    { season:'summer', text:'Mow at proper height for your grass type' },
+    { season:'fall',   text:'Overseed thin lawn areas' },
+    { season:'fall',   text:'Plant spring bulbs' },
+    { season:'winter', text:'Prune dormant trees and shrubs' },
+    { season:'winter', text:'Plan and order seeds for next season' },
+  ],
+};
+
+const CHEM_CALENDAR = {
+  'Mid-Atlantic': [
+    { month:'Jan', tasks:'Dormant oil spray on fruit trees · Plan fertilizer schedule' },
+    { month:'Feb', tasks:'Pre-season equipment prep · Late dormant pruning' },
+    { month:'Mar', tasks:'Pre-emergent herbicide (crabgrass) · Soil test' },
+    { month:'Apr', tasks:'Broadleaf weed control · Starter fertilizer for new seeding' },
+    { month:'May', tasks:'Lawn fertilizer (slow-release N) · Insect scout' },
+    { month:'Jun', tasks:'Spot-treat weeds · Fungicide if needed (brown patch risk)' },
+    { month:'Jul', tasks:'Skip fertilizer in heat · Pest control if needed' },
+    { month:'Aug', tasks:'Scout for grubs · Prepare for fall seeding' },
+    { month:'Sep', tasks:'Overseed · Fall pre-emergent · Fertilize cool-season grass' },
+    { month:'Oct', tasks:'Winterizer fertilizer · Broadleaf weed control in lawn' },
+    { month:'Nov', tasks:'Last mowing · Apply dormant fertilizer if needed' },
+    { month:'Dec', tasks:'Store chemicals properly · No applications needed' },
+  ],
+  'default': [
+    { month:'Jan', tasks:'Dormant season – no applications' },
+    { month:'Feb', tasks:'Plan fertilizer program' },
+    { month:'Mar', tasks:'Pre-emergent herbicide' },
+    { month:'Apr', tasks:'Spring fertilizer' },
+    { month:'May', tasks:'Weed control as needed' },
+    { month:'Jun', tasks:'Pest scouting' },
+    { month:'Jul', tasks:'Spot treatments only' },
+    { month:'Aug', tasks:'Grub control if needed' },
+    { month:'Sep', tasks:'Fall fertilizer' },
+    { month:'Oct', tasks:'Weed control · Winterizer' },
+    { month:'Nov', tasks:'Last lawn treatment' },
+    { month:'Dec', tasks:'No applications – store chemicals' },
+  ],
+};
+
+const NATIVE_PLANTS = {
+  'Mid-Atlantic': [
+    { name:'Eastern Redbud', sci:'Cercis canadensis', tags:['Tree','Pollinators','Spring bloom'] },
+    { name:'Black-eyed Susan', sci:'Rudbeckia hirta', tags:['Perennial','Butterflies','Drought tolerant'] },
+    { name:'Virginia Sweetspire', sci:'Itea virginica', tags:['Shrub','Birds','Fall color'] },
+    { name:'Wild Columbine', sci:'Aquilegia canadensis', tags:['Perennial','Hummingbirds','Part shade'] },
+    { name:'Swamp Milkweed', sci:'Asclepias incarnata', tags:['Perennial','Monarchs','Wet areas'] },
+    { name:'American Beautyberry', sci:'Callicarpa americana', tags:['Shrub','Birds','Fall interest'] },
+    { name:'Cardinal Flower', sci:'Lobelia cardinalis', tags:['Perennial','Hummingbirds','Moist soil'] },
+    { name:'Inkberry Holly', sci:'Ilex glabra', tags:['Shrub','Evergreen','Birds'] },
+  ],
+  'Northeast': [
+    { name:'New England Aster', sci:'Symphyotrichum novae-angliae', tags:['Perennial','Butterflies','Fall bloom'] },
+    { name:'Wild Bergamot', sci:'Monarda fistulosa', tags:['Perennial','Bees','Drought tolerant'] },
+    { name:'Serviceberry', sci:'Amelanchier canadensis', tags:['Tree/Shrub','Birds','Spring bloom'] },
+    { name:'Butterfly Weed', sci:'Asclepias tuberosa', tags:['Perennial','Monarchs','Full sun'] },
+    { name:'Joe-Pye Weed', sci:'Eutrochium purpureum', tags:['Perennial','Butterflies','Tall'] },
+    { name:'Buttonbush', sci:'Cephalanthus occidentalis', tags:['Shrub','Pollinators','Wet areas'] },
+  ],
+  'Southeast': [
+    { name:'Coral Honeysuckle', sci:'Lonicera sempervirens', tags:['Vine','Hummingbirds','Evergreen'] },
+    { name:'Southern Magnolia', sci:'Magnolia grandiflora', tags:['Tree','Evergreen','Fragrant'] },
+    { name:'Beautyberry', sci:'Callicarpa americana', tags:['Shrub','Birds','Fall color'] },
+    { name:'Coneflower', sci:'Echinacea purpurea', tags:['Perennial','Butterflies','Drought tolerant'] },
+    { name:'Possumhaw Holly', sci:'Ilex decidua', tags:['Shrub','Birds','Winter interest'] },
+    { name:'Trumpet Creeper', sci:'Campsis radicans', tags:['Vine','Hummingbirds','Aggressive'] },
+  ],
+  'default': [
+    { name:'Coneflower', sci:'Echinacea purpurea', tags:['Perennial','Butterflies','Drought tolerant'] },
+    { name:'Milkweed', sci:'Asclepias syriaca', tags:['Perennial','Monarchs','Full sun'] },
+    { name:'Black-eyed Susan', sci:'Rudbeckia hirta', tags:['Perennial','Pollinators','Easy care'] },
+    { name:'Wild Bergamot', sci:'Monarda fistulosa', tags:['Perennial','Bees','Drought tolerant'] },
+    { name:'Serviceberry', sci:'Amelanchier spp.', tags:['Tree/Shrub','Birds','Spring bloom'] },
+  ],
+};
+
+function populateProFeatures() {
+  if (!currentRegion) return;
+  const region = currentRegion.region;
+
+  // Show Pro section cards if Plus or higher
+  if (hasTier('plus')) {
+    ['soilCard','taskCard','chemCard','nativeCard','exportCard'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.style.display = 'block'; el.classList.add('visible'); }
+    });
+  }
+
+  if (!hasTier('pro')) return;
+
+  // Remove lock veils
+  document.querySelectorAll('.lock-veil').forEach(v => v.style.display = 'none');
+
+  // Soil amendments
+  const soilRows = (SOIL_DATA[region] || SOIL_DATA['default']);
+  document.getElementById('soilTableBody').innerHTML = soilRows.map(r =>
+    `<tr><td><strong>${r.amend}</strong></td><td>${r.purpose}</td><td>${r.rate}</td><td>${r.timing}</td></tr>`
+  ).join('');
+
+  // Task checklist — load saved state from localStorage
+  const savedTasks = JSON.parse(localStorage.getItem('gw_tasks') || '{}');
+  const tasks = (TASK_DATA[region] || TASK_DATA['default']);
+  const taskList = document.getElementById('taskList');
+  taskList.innerHTML = tasks.map((t, i) => {
+    const done = savedTasks[i] || false;
+    return `<li class="task-item">
+      <div class="task-cb ${done ? 'done' : ''}" onclick="toggleTask(${i})">${done ? '✓' : ''}</div>
+      <div class="task-text"><span class="task-season ${t.season}">${t.season}</span>${t.text}</div>
+    </li>`;
+  }).join('');
+  updateTaskProgress(tasks.length, savedTasks);
+
+  // Chemical calendar
+  const curMonth = new Date().getMonth();
+  const calData = (CHEM_CALENDAR[region] || CHEM_CALENDAR['default']);
+  document.getElementById('chemGrid').innerHTML = calData.map((m, i) =>
+    `<div class="chem-month ${i === curMonth ? 'active-month' : ''}">
+      <div class="cm-name">${m.month}${i === curMonth ? ' ◀' : ''}</div>
+      <div class="cm-tasks">${m.tasks}</div>
+    </div>`
+  ).join('');
+
+  // Native plants
+  const plants = (NATIVE_PLANTS[region] || NATIVE_PLANTS['default']);
+  document.getElementById('nativeGrid').innerHTML = plants.map(p =>
+    `<div class="native-card">
+      <div class="nc-name">${p.name}</div>
+      <div class="nc-sci">${p.sci}</div>
+      <div class="nc-tags">${p.tags.map(t => `<span class="nc-tag">${t}</span>`).join('')}</div>
+    </div>`
+  ).join('');
+
+  // Export
+  const exportContent = document.getElementById('exportContent');
+  const exportBtns = document.getElementById('exportBtns');
+  if (exportContent) exportContent.style.display = 'none';
+  if (exportBtns) exportBtns.style.display = 'flex';
+}
+
+function toggleTask(idx) {
+  const saved = JSON.parse(localStorage.getItem('gw_tasks') || '{}');
+  saved[idx] = !saved[idx];
+  localStorage.setItem('gw_tasks', JSON.stringify(saved));
+  const cb = document.querySelectorAll('.task-cb')[idx];
+  if (cb) {
+    cb.classList.toggle('done', saved[idx]);
+    cb.textContent = saved[idx] ? '✓' : '';
+  }
+  const region = currentRegion?.region;
+  const tasks = (TASK_DATA[region] || TASK_DATA['default']);
+  updateTaskProgress(tasks.length, saved);
+}
+
+function updateTaskProgress(total, saved) {
+  const done = Object.values(saved).filter(Boolean).length;
+  const pct = Math.round(done / total * 100);
+  const el = document.getElementById('taskProgress');
+  if (!el) return;
+  el.style.display = 'block';
+  el.innerHTML = `<div class="usage-bar-wrap">
+    <div class="usage-bar-label"><span>Tasks completed</span><span>${done} / ${total} (${pct}%)</span></div>
+    <div class="usage-bar"><div class="usage-bar-fill ${pct === 100 ? '' : pct > 60 ? '' : ''}" style="width:${pct}%; background:var(--moss);"></div></div>
+  </div>`;
+}
+
+function exportProfile(mode) {
+  if (!currentRegion) { alert('Please load a location first.'); return; }
+  const content = `
+GardenWise — Yard Profile Report
+Generated: ${new Date().toLocaleDateString()}
+================================
+Location: ${currentRegion.city}, ${currentRegion.state}
+USDA Zone: ${currentRegion.zone}
+Climate: Avg ${currentRegion.avgTemp} · Rainfall ${currentRegion.rainfall} · Sunlight ${currentRegion.sunlight}
+Soil: ${currentRegion.soil} · Frost-Free: ${currentRegion.frostFree}
+
+YARD SECTIONS:
+${selectedSections.map(k => {
+  const s = YARD_SECTIONS[k];
+  const cfg = sectionConfigs[k];
+  return `  ${s.label}: ${cfg ? cfg.result.badge + ' — ' + cfg.result.desc : 'Not configured'}`;
+}).join('\n') || '  No sections configured'}
+
+GRASS RECOMMENDATIONS:
+${(GRASS_DATA[getGrassType(currentRegion.region, currentRegion.zone)]?.tags || []).join(', ')}
+
+NATIVE PLANTS FOR YOUR REGION:
+${(NATIVE_PLANTS[currentRegion.region] || NATIVE_PLANTS['default']).map(p => `  ${p.name} (${p.sci})`).join('\n')}
+
+================================
+GardenWise Pro · gardenwise.app
+  `;
+  if (mode === 'print') {
+    const w = window.open('', '_blank');
+    w.document.write(`<pre style="font-family:monospace; white-space:pre-wrap; padding:2rem;">${content}</pre>`);
+    w.print();
+  } else {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url;
+    a.download = `gardenwise-yard-profile-${currentRegion.city.replace(/\s/g,'-').toLowerCase()}.txt`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+}
+
+// Override askAI to enforce usage limits
+async function askAI() {
+  // Free tier: 5 AI questions per day
+  if (!hasTier('plus')) {
+    const usage = getAiUsage();
+    if (usage >= 5) {
+      const banner = document.getElementById('aiUsageBanner');
+      if (banner) {
+        banner.style.display = 'block';
+        banner.innerHTML = `<div style="background:#fef3c7; border:2px solid #f59e0b; border-radius:10px; padding:0.75rem 1rem; font-size:0.85rem; display:flex; align-items:center; gap:0.75rem;">
+          ⚠️ <span>You've used all 5 free AI questions today. <a href="#" onclick="openPaywall(); return false;" style="color:var(--moss); font-weight:600;">Upgrade to GardenWise+ ($4.99)</a> for unlimited access.</span>
+        </div>`;
+      }
+      return;
+    }
+  }
+
+  const inputEl = document.getElementById('chatInput');
+  const outputEl = document.getElementById('chatOutput');
+  const question = inputEl.value.trim();
+
+  if (!question) return;
+  if (!currentRegion) {
+    outputEl.innerHTML = '<span style="color:var(--bark)">Please enter your ZIP code first to enable AI advice.</span>';
+    return;
+  }
+
+  inputEl.value = '';
+  outputEl.innerHTML = `<span class="spinner"></span> Thinking…`;
+
+  const yardContext = Object.keys(sectionConfigs).length > 0
+    ? '\n\nThe user has also configured their yard sections: ' +
+      Object.entries(sectionConfigs).map(([k, v]) => {
+        const s = YARD_SECTIONS[k];
+        return v ? `${s.label}: ${v.result.badge} (${v.result.desc})` : `${s.label}: not configured`;
+      }).join('; ')
+    : '';
+
+  const context = `You are GardenWise, a friendly and expert yard and garden advisor. 
+The user is located in ${currentRegion.city}, ${currentRegion.state} (USDA Zone ${currentRegion.zone}). 
+Their climate details: Average temp ${currentRegion.avgTemp}, annual rainfall ${currentRegion.rainfall}, 
+sunlight level ${currentRegion.sunlight}, soil type ${currentRegion.soil}, frost-free season ${currentRegion.frostFree}.${yardContext}
+Give concise, practical, actionable advice tailored to their specific location and yard conditions. Be friendly and encouraging.`;
+
+  try {
+    const data = await callClaude({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: context,
+      messages: [{ role: 'user', content: question }]
+    }, '/api/claude');
+
+    const answer = data.content?.map(b => b.text || '').join('') || 'Sorry, I could not get a response.';
+    outputEl.textContent = answer;
+
+    // Track usage for free tier
+    if (!hasTier('plus')) {
+      incrementAiUsage();
+      const remaining = 5 - getAiUsage();
+      const banner = document.getElementById('aiUsageBanner');
+      if (banner && remaining <= 2) {
+        banner.style.display = 'block';
+        banner.innerHTML = `<div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; padding:0.6rem 1rem; font-size:0.82rem;">
+          ⚡ ${remaining} free question${remaining !== 1 ? 's' : ''} remaining today. <a href="#" onclick="openPaywall(); return false;" style="color:var(--moss); font-weight:600;">Upgrade for unlimited →</a>
+        </div>`;
+      }
+    }
+  } catch (err) {
+    outputEl.innerHTML = '<span style="color:#c0392b">⚠️ AI unavailable right now. Please try again.</span>';
+  }
+}
+
+// Hook identifySpecies to enforce free-tier ID limit
+const _origIdentify = identifySpecies;
+async function identifySpecies() {
+  if (!hasTier('plus')) {
+    const usage = getIdUsage();
+    if (usage >= 3) {
+      document.getElementById('previewWrap').style.display = 'none';
+      document.getElementById('identifyBtn').style.display = 'none';
+      document.getElementById('uploadZone').style.display = 'block';
+      alert('You\'ve used your 3 free species IDs this month.\n\nUpgrade to GardenWise+ ($4.99 one-time) for unlimited identifications.');
+      openPaywall();
+      return;
+    }
+  }
+  await _origIdentify();
+  if (!hasTier('plus')) incrementIdUsage();
+}
+
+// Initialize tier on load
+window.addEventListener('DOMContentLoaded', () => {
+  applyTier();
+  // Hide Pro cards until location loaded
+  ['soilCard','taskCard','chemCard','nativeCard','exportCard'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+});
+
+</script>
+</body>
+</html>
